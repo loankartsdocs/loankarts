@@ -1,69 +1,1847 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import BrokerAuthModal from "../../components/BrokerAuthModal";
+
+
+const banks = [
+  ["SBI", "sbi.co.in"],
+  ["HDFC Bank", "hdfcbank.com"],
+  ["ICICI Bank", "icicibank.com"],
+  ["Axis Bank", "axisbank.com"],
+  ["IDFC FIRST Bank", "idfcfirstbank.com"],
+  ["IndusInd Bank", "indusind.com"],
+  ["Bandhan Bank", "bandhanbank.com"],
+  ["Kotak Mahindra Bank", "kotak.com"],
+  ["Unity Small Finance Bank", "unitybank.com"],
+  ["Shriram Finance", "shriramfinance.in"],
+  ["Yes Bank", "yesbank.in"],
+  ["PNB", "pnbindia.in"],
+  ["Bank of Maharashtra", "bankofmaharashtra.in"],
+  ["Federal Bank", "federalbank.co.in"],
+  ["Union Bank of India", "unionbankofindia.bank.in"],
+  ["SVC Bank", "svcbank.com"],
+  ["Bank of Baroda", "bankofbaroda.in"],
+  ["Central Bank of India", "centralbankofindia.co.in"],
+];
+
+const loans = [
+  ["01", "Personal Loan", "Funding for personal needs, emergencies and planned expenses.", "₹50K – ₹25L"],
+  ["02", "Business Loan", "Funding support for working capital, expansion and business needs.", "₹1L – ₹5Cr"],
+  ["03", "Home Loan", "Finance for purchase, construction and balance transfer.", "₹5L – ₹5Cr"],
+  ["04", "Loan Against Property", "Unlock property value for business or personal requirements.", "₹10L – ₹5Cr"],
+  ["05", "Car Loan", "Financing assistance for new and pre-owned vehicles.", "₹1L – ₹50L"],
+  ["06", "Education Loan", "Funding assistance for higher education and career-focused studies.", "₹1L – ₹1Cr"],
+];
+
+const problems = [
+  ["01", "Low CIBIL", "A lower score can make normal bank routes difficult. We help identify suitable options."],
+  ["02", "Bank Rejection", "Understand what went wrong and explore a better-structured application."],
+  ["03", "Collateral Gap", "Explore secured and unsecured routes based on profile and eligibility."],
+  ["04", "Documentation", "Get help understanding the documents needed before submission."],
+  ["05", "Delayed Processing", "We help keep the application organised and track the next stage."],
+  ["06", "Business Expansion", "Funding support for working capital, machinery and growth requirements."],
+  ["07", "GST / ITR Issues", "Understand documentation gaps and prepare the profile for lender review."],
+  ["08", "Funding Requirement", "Discuss the requirement and identify suitable lender/product routes."],
+];
+
+const advantages = [
+  ["01", "Experts for Every Loan Product", "Guidance across personal, business, home, LAP, vehicle and education requirements."],
+  ["02", "Customised Funding Structure", "Every profile is different. We organise the requirement around income, banking and lender fit."],
+  ["03", "Faster Processing", "Clear documentation and organised submission reduce avoidable back-and-forth."],
+  ["04", "Multiple Bank Tie-Ups", "Access multiple financial channels depending on eligibility and product requirements."],
+  ["05", "End-to-End Support", "From initial requirement to documentation, processing and application updates."],
+  ["06", "Solutions for Different Profiles", "Salaried, self-employed, professionals and businesses can discuss their funding needs."],
+];
+
+const steps = [
+  ["01", "Tell Us Your Requirement", "Loan amount, loan type & basic details share karein.", "📝"],
+  ["02", "Profile Assessment", "Our team reviews your profile, eligibility & requirements.", "🔍"],
+  ["03", "Lender Matching", "We identify suitable lender options based on your profile.", "🏦"],
+  ["04", "Processing & Disbursement", "Documentation, processing & lender coordination till disbursement.", "⚡"],
+];
+
+const testimonials = [
+  ["★★★★★", "Business Owner", "The team explained the process clearly and helped us understand which loan route suited our requirement."],
+  ["★★★★★", "Salaried Customer", "The application process was simple and the team kept us updated at every stage."],
+  ["★★★★★", "Financial Professional", "LoanKarts provides a practical way to manage loan requirements and documentation."],
+  ["★★★★★", "Self Employed", "The team understood my requirement and explained the documentation before moving ahead."],
+  ["★★★★★", "Business Customer", "Good communication throughout the process and clear guidance on the next steps."],
+  ["★★★★★", "Loan Customer", "The process was easy to understand and the team was available when I had questions."],
+];
+
+
+
+const bankLogoFiles: Record<string, string> = {
+  "SBI": "/sbi_co_in.ico",
+  "HDFC Bank": "/hdfcbank.png",
+  "ICICI Bank": "/icicibank_com.ico",
+  "Axis Bank": "/axisbank_com.ico",
+  "IDFC FIRST Bank": "/idfcfirstbank_com.ico",
+  "IndusInd Bank": "/indusind.jpeg",
+  "Bandhan Bank": "/sbi_co_in.ico",
+  "Kotak Mahindra Bank": "/kotak_com.png",
+  "Unity Small Finance Bank": "/sbi_co_in.ico",
+  "Shriram Finance": "/sbi_co_in.ico",
+  "Yes Bank": "/yesbank.jpg",
+  "PNB": "/pnbindia_in.ico",
+  "Bank of Maharashtra": "/sbi_co_in.ico",
+  "Federal Bank": "/federalbank_co_in.png",
+  "Union Bank of India": "/unionbank.jpeg",
+  "SVC Bank": "/sbi_co_in.ico",
+  "Bank of Baroda": "/bob.png",
+  "Central Bank of India": "/sbi_co_in.ico",
+};
 
 export default function Home() {
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("All");
+
+  const [brokerModal, setBrokerModal] = useState(false);
+  const [brokerMode, setBrokerMode] = useState<"login" | "register">("login");
+
+  useEffect(() => {
+    const openBroker = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        mode?: "login" | "register";
+      }>;
+
+      setBrokerMode(customEvent.detail?.mode || "login");
+      setBrokerModal(true);
+    };
+
+    window.addEventListener("open-broker-auth", openBroker);
+
+    return () => {
+      window.removeEventListener("open-broker-auth", openBroker);
+    };
+  }, []);
+
+  const calculateEMI = () => {
+    const principal = Number(
+      (document.getElementById("emi-principal") as HTMLInputElement)?.value || 0
+    );
+
+    const annualRate = Number(
+      (document.getElementById("emi-rate") as HTMLInputElement)?.value || 0
+    );
+
+    const years = Number(
+      (document.getElementById("emi-tenure") as HTMLInputElement)?.value || 0
+    );
+
+    if (!principal || !years) return;
+
+    const months = years * 12;
+    const monthlyRate = annualRate / 12 / 100;
+
+    const emi =
+      monthlyRate === 0
+        ? principal / months
+        : (principal *
+            monthlyRate *
+            Math.pow(1 + monthlyRate, months)) /
+          (Math.pow(1 + monthlyRate, months) - 1);
+
+    const totalPayment = emi * months;
+    const totalInterest = totalPayment - principal;
+
+    const format = (value: number) =>
+      `₹${Math.round(value).toLocaleString("en-IN")}`;
+
+    const emiElement = document.getElementById("emi-result");
+    const totalElement = document.getElementById("emi-total");
+    const interestElement = document.getElementById("emi-interest");
+
+    if (emiElement) emiElement.textContent = format(emi);
+    if (totalElement) totalElement.textContent = format(totalPayment);
+    if (interestElement) interestElement.textContent = format(totalInterest);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+   <main className="min-h-screen overflow-x-clip bg-white text-[#082f42]">
+
+      <style jsx global>{`
+        html {
+          scroll-behavior: smooth;
+        }
+
+        body {
+          overflow-x: hidden;
+        }
+  .lk-header-apply {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+        header img {
+          max-width: none;
+        }
+
+        .lk-about-trigger {
+          font-family: inherit !important;
+          -webkit-font-smoothing: inherit;
+        }
+
+        .lk-about-trigger span {
+          font-family: inherit;
+        }
+
+        /* FIXED LOGO SIZE — prevents large logo flash on refresh */
+        header a[aria-label="LoanKarts"] {
+          width: 160px !important;
+          height: 40px !important;
+          min-width: 160px !important;
+          min-height: 40px !important;
+          max-width: 160px !important;
+          max-height: 40px !important;
+          overflow: hidden !important;
+          display: flex !important;
+          align-items: center !important;
+          flex: 0 0 160px !important;
+        }
+
+        header a[aria-label="LoanKarts"] img {
+          display: block !important;
+          width: 160px !important;
+          height: 40px !important;
+          min-width: 160px !important;
+          min-height: 40px !important;
+          max-width: 160px !important;
+          max-height: 40px !important;
+          object-fit: contain !important;
+        }
+
+        @keyframes lkReveal {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes lkScale {
+          from {
+            opacity: 0;
+            transform: scale(.97);
+          }
+
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes lkMarquee {
+          from {
+            transform: translateX(0);
+          }
+
+          to {
+            transform: translateX(-50%);
+          }
+        }
+
+        .lk-reveal {
+          animation: lkReveal .8s ease both;
+        }
+
+        .lk-scale {
+          animation: lkScale .9s .15s ease both;
+        }
+
+        .lk-marquee {
+          width: max-content;
+          animation: lkMarquee 38s linear infinite;
+          will-change: transform;
+        }
+
+        .lk-marquee:hover,
+        .lk-marquee:focus-within {
+          animation-play-state: paused;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .lk-marquee {
+            animation: none;
+          }
+        }
+
+        .lk-no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+
+        .lk-no-scrollbar {
+          scrollbar-width: none;
+        }
+      `}</style>
+
+
+      {/* ================= TOP BAR ================= */}
+
+      <div className="bg-[#062536] text-white">
+
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between px-5 py-2 text-[10px] sm:px-6">
+
+          <span className="hidden sm:block text-white/70">
+            LoanKarts — Your trusted loan assistance partner
+          </span>
+
+          <div className="ml-auto flex items-center gap-5">
+
+           <a
+  href="tel:+919315743939"
+  className="font-bold hover:text-[#12bdd6]"
+>
+  +91 93157 43939
+</a>
+
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="mailto:docs@loankarts.com"
+              className="hidden sm:block font-bold hover:text-[#12bdd6]"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              docs@loankarts.com
+            </a>
+
+          </div>
+
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+
+      </div>
+
+
+      {/* ================= NAVIGATION ================= */}
+
+      <header className="sticky top-0 z-[9999] w-full border-b border-slate-200 bg-white/95 backdrop-blur">
+
+        <div className="mx-auto flex h-[64px] max-w-[1180px] items-center justify-between px-5 sm:px-6">
+
+          {/* LOGO */}
+
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#home"
+            aria-label="LoanKarts"
+            className="relative flex h-[40px] w-[160px] min-h-[40px] min-w-[160px] shrink-0 items-center overflow-hidden"
+            style={{ width: "160px", height: "40px" }}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+            <img
+              src="/loankarts-logo-transparent.png"
+              alt="LoanKarts"
+              width={160}
+              height={40}
+              className="block h-[40px] w-[160px] object-contain"
+              style={{
+                width: "160px",
+                height: "40px",
+                maxWidth: "160px",
+                maxHeight: "40px",
+              }}
             />
-            Deploy Now
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+
+          {/* DESKTOP NAV */}
+
+          <nav className="hidden items-center gap-2 lg:flex">
+
+            <a
+              href="/"
+              className="rounded-lg px-3 py-2 text-[13px] font-semibold text-[#183f55] transition-all duration-200 hover:bg-[#e9f8fb] hover:text-[#08aeca] hover:shadow-sm"
+            >
+              Home
+            </a>
+
+            <a
+              href="/#loans"
+              className="rounded-lg px-3 py-2 text-[13px] font-semibold text-[#183f55] transition-all duration-200 hover:bg-[#e9f8fb] hover:text-[#08aeca] hover:shadow-sm"
+            >
+              Loans
+            </a>
+
+            <a
+              href="/#emi-calculator"
+              className="rounded-lg px-3 py-2 text-[13px] font-semibold text-[#183f55] transition-all duration-200 hover:bg-[#e9f8fb] hover:text-[#08aeca] hover:shadow-sm"
+            >
+              EMI Calculator
+            </a>
+
+            {/* ABOUT DROPDOWN */}
+            <div
+              className="relative"
+              onMouseEnter={() => setAboutOpen(true)}
+              onMouseLeave={() => setAboutOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setAboutOpen((prev) => !prev)}
+                className="lk-about-trigger flex items-center gap-1 rounded-lg px-3 py-2 text-[13px] font-semibold leading-normal text-[#183f55] transition-all duration-200 hover:bg-[#e9f8fb] hover:text-[#08aeca] hover:shadow-sm"
+                style={{
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  lineHeight: "1.5",
+                }}
+              >
+                <span>About</span>
+                <span
+                  aria-hidden="true"
+                  className={`text-[10px] leading-none transition-transform duration-200 ${
+                    aboutOpen ? "rotate-180" : ""
+                  }`}
+                >
+                  ▾
+                </span>
+              </button>
+
+              {aboutOpen && (
+                <div
+                  className="absolute left-0 top-full z-[10000] w-[210px] overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+                  onMouseEnter={() => setAboutOpen(true)}
+                  onMouseLeave={() => setAboutOpen(false)}
+                >
+                  <a
+                    href="/about"
+                    onClick={() => setAboutOpen(false)}
+                    className="block rounded-lg px-4 py-3 text-[13px] font-semibold leading-normal text-[#183f55] transition hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+                  >
+                    About Us
+                  </a>
+
+                  <a
+                    href="/about/team"
+                    onClick={() => setAboutOpen(false)}
+                    className="block rounded-lg px-4 py-3 text-[13px] font-semibold leading-normal text-[#183f55] transition hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+                  >
+                    Our Team
+                  </a>
+
+                  <a
+                    href="/about/faq"
+                    onClick={() => setAboutOpen(false)}
+                    className="block rounded-lg px-4 py-3 text-[13px] font-semibold leading-normal text-[#183f55] transition hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+                  >
+                    FAQ
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* CONTACT */}
+            <a
+              href="/contact"
+              className="rounded-lg px-3 py-2 text-[13px] font-semibold text-[#183f55] transition-all duration-200 hover:bg-[#e9f8fb] hover:text-[#08aeca] hover:shadow-sm"
+            >
+              Contact
+            </a>
+
+            {/* HEADER BUTTONS — SAME STYLE AS HERO BUTTONS */}
+           <button
+  onClick={() => setBrokerModal(true)}
+  className="ml-2 flex h-[48px] items-center justify-center rounded-lg border border-slate-300 bg-white px-6 !text-[12px] !font-extrabold text-[#082f42] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#08b8d4] hover:bg-[#f7fdfe] hover:shadow-md"
+>
+  BROKER LOGIN →
+</button>
+
+<a
+  href="#apply"
+  className="lk-header-apply flex h-[48px] items-center justify-center rounded-lg bg-[#08b8d4] px-6 text-[12px] font-extrabold shadow-lg shadow-cyan-500/15 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#079eb7]"
+>
+  APPLY NOW →
+</a>
+          </nav>
+
+
+          {/* MOBILE MENU BUTTON */}
+
+          <button
+            onClick={() => setMobileMenu(!mobileMenu)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-lg lg:hidden"
           >
-            Documentation
-          </a>
+            {mobileMenu ? "×" : "☰"}
+          </button>
+
         </div>
-      </main>
+
+
+        {/* MOBILE MENU */}
+
+        {mobileMenu && (
+
+          <div className="border-t border-slate-200 bg-white px-5 py-4 shadow-lg lg:hidden">
+
+            <div className="space-y-1">
+
+              <a
+                href="/"
+                onClick={() => setMobileMenu(false)}
+                className="block rounded-lg px-3 py-2.5 text-[15px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+              >
+                Home
+              </a>
+
+              <a
+                href="/#loans"
+                onClick={() => setMobileMenu(false)}
+                className="block rounded-lg px-3 py-2.5 text-[15px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+              >
+                Loans
+              </a>
+
+              <a
+                href="/#emi-calculator"
+                onClick={() => setMobileMenu(false)}
+                className="block rounded-lg px-3 py-2.5 text-[15px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+              >
+                EMI Calculator
+              </a>
+
+              {/* MOBILE ABOUT */}
+              <button
+                type="button"
+                onClick={() => setAboutOpen(!aboutOpen)}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-[15px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+              >
+                <span>About</span>
+                <span
+                  className={`transition-transform ${
+                    aboutOpen ? "rotate-180" : ""
+                  }`}
+                >
+                  ▾
+                </span>
+              </button>
+
+              {aboutOpen && (
+                <div className="ml-3 border-l-2 border-[#08b8d4] pl-2">
+                  <a
+                    href="/about"
+                    onClick={() => {
+                      setMobileMenu(false);
+                      setAboutOpen(false);
+                    }}
+                    className="block rounded-lg px-3 py-2.5 text-[14px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+                  >
+                    About Us
+                  </a>
+
+                  <a
+                    href="/about/team"
+                    onClick={() => {
+                      setMobileMenu(false);
+                      setAboutOpen(false);
+                    }}
+                    className="block rounded-lg px-3 py-2.5 text-[14px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+                  >
+                    Our Team
+                  </a>
+
+                  <a
+                    href="/about/faq"
+                    onClick={() => {
+                      setMobileMenu(false);
+                      setAboutOpen(false);
+                    }}
+                    className="block rounded-lg px-3 py-2.5 text-[14px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+                  >
+                    FAQ
+                  </a>
+                </div>
+              )}
+
+              {/* CONTACT */}
+              <a
+                href="/contact"
+                onClick={() => setMobileMenu(false)}
+                className="block rounded-lg px-3 py-2.5 text-[15px] font-semibold transition-all hover:bg-[#e9f8fb] hover:text-[#08aeca]"
+              >
+                Contact
+              </a>
+
+
+              <button
+                onClick={() => setBrokerModal(true)}
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white py-3 text-[10px] font-extrabold text-[#082f42] transition-all hover:border-[#08b8d4] hover:bg-[#f7fdfe]"
+              >
+                BROKER LOGIN →
+              </button>
+
+
+              <a
+                href="#apply"
+                onClick={() => setMobileMenu(false)}
+                className="mt-2 block rounded-lg bg-[#08b8d4] py-3 text-center text-[10px] font-extrabold text-white transition-all hover:bg-[#079eb7]"
+              >
+                APPLY NOW →
+              </a>
+
+            </div>
+
+          </div>
+
+        )}
+
+      </header>
+
+
+      {/* ================= HERO ================= */}
+
+      <section
+        id="home"
+        className="relative overflow-hidden bg-gradient-to-br from-[#f7fafc] via-[#f5f9fb] to-[#eef9fb]"
+      >
+
+        {/* BACKGROUND GLOW */}
+
+        <div className="absolute right-[-160px] top-[-100px] h-[520px] w-[520px] rounded-full bg-[#08b8d4]/10 blur-[100px]" />
+
+        <div className="absolute bottom-[-180px] left-[-100px] h-[400px] w-[400px] rounded-full bg-[#08b8d4]/5 blur-[90px]" />
+
+
+        <div className="mx-auto grid max-w-[1240px] items-center gap-4 px-5 py-10 sm:px-6 md:py-14 lg:grid-cols-[1fr_.9fr] lg:py-[58px]">
+
+
+          {/* LEFT */}
+
+          <div className="lk-reveal relative z-10">
+
+            <span className="inline-flex rounded-full border border-[#b8e8ee] bg-white/90 px-3 py-1.5 text-[9px] font-extrabold text-[#0a4963] shadow-sm">
+              ● LOAN ASSISTANCE · PAN INDIA
+            </span>
+
+
+            <h1 className="mt-5 max-w-[650px] text-[42px] font-black leading-[.98] tracking-[-1.8px] text-[#082f42] sm:text-[54px] lg:text-[62px]">
+
+              Loan problems?
+
+              <span className="block text-[#08aeca]">
+                We find the right route.
+              </span>
+
+            </h1>
+
+
+            <p className="mt-5 max-w-[560px] text-[15px] leading-7 text-slate-500 sm:text-[16px]">
+
+              Professional assistance for personal, business, home, vehicle and other loan requirements — from profile understanding to documentation and lender processing.
+
+            </p>
+
+
+            <div className="mt-7 flex flex-wrap gap-2.5">
+
+              <a
+                href="#apply"
+                className="flex h-[52px] min-w-[235px] items-center justify-center rounded-lg bg-[#08b8d4] px-8 text-[13px] font-extrabold text-white shadow-lg shadow-cyan-500/15 transition hover:-translate-y-0.5 hover:bg-[#079eb7]"
+              >
+                APPLY FOR A LOAN →
+              </a>
+
+
+            </div>
+
+
+            <div className="mt-6 flex flex-wrap gap-4 text-[12px] font-semibold text-slate-500">
+
+              <span>✓ Multiple loan categories</span>
+
+              <span>✓ Document assistance</span>
+
+              <span>✓ Human support</span>
+
+            </div>
+
+          </div>
+
+
+          {/* ================= PROFESSIONAL PHOTO ================= */}
+
+          <div className="lk-scale relative mx-auto flex h-[500px] w-full max-w-[500px] items-end justify-center lg:h-[570px] lg:ml-auto">
+
+
+            {/* SOFT GLOW */}
+
+            <div className="absolute bottom-[-80px] right-[-50px] h-[430px] w-[430px] rounded-full bg-[#08b8d4]/10 blur-[90px]" />
+
+
+            {/* SOFT BACKGROUND SHAPE */}
+
+            <div className="absolute bottom-0 right-[4%] h-[440px] w-[380px] rounded-[50%] bg-gradient-to-t from-[#dceff3] via-[#edf7f9] to-transparent opacity-90" />
+
+
+            {/* PHOTO */}
+
+            <div className="relative z-10 flex h-full w-full items-end justify-center">
+
+             <img
+  src="/loan-consultant.png"
+  alt="LoanKarts loan consultant"
+  className="relative top-[48px] z-10 h-[92%] w-auto max-w-none object-contain object-bottom drop-shadow-[0_25px_35px_rgba(8,47,66,.18)] lg:top-[55px]"
+  style={{
+    WebkitMaskImage:
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+    maskImage:
+      "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+  }}
+/>
+
+            </div>
+
+
+            {/* PHOTO TEXT */}
+
+            <div className="absolute bottom-[38px] left-[50%] z-20 w-max -translate-x-[25%]">
+
+              <p className="text-[8px] font-extrabold uppercase tracking-[.25em] text-[#08aeca]">
+                LOANKARTS · LOAN ASSISTANCE
+              </p>
+
+              <h3 className="mt-1 text-[20px] font-black tracking-[-.4px] text-[#082f42]">
+                Your loan. Our guidance.
+              </h3>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= TRUST FEATURES ================= */}
+
+      <section className="relative z-30 -mt-[62px] mb-[62px]">
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-6">
+          <div className="mx-auto grid min-h-[100px] max-w-[980px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_42px_rgba(8,47,66,.18)] md:grid-cols-3 md:max-w-[980px]">
+
+            <div className="flex min-h-[150px] flex-col justify-center border-b border-slate-200 px-6 py-5 md:border-b-0 md:border-r md:px-6">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#e9f8fb] text-[20px]">
+                🛡️
+              </div>
+              <h3 className="text-[15px] font-extrabold text-[#082f42]">
+                Trusted Loan Solutions
+              </h3>
+              <p className="mt-1.5 text-[12px] leading-5 text-slate-500">
+                Transparent assistance and customer-focused loan support.
+              </p>
+            </div>
+
+            <div className="flex min-h-[150px] flex-col justify-center border-b border-slate-200 px-6 py-5 md:border-b-0 md:border-r md:px-6">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#fff7e8] text-[20px]">
+                🧑‍💼
+              </div>
+              <h3 className="text-[15px] font-extrabold text-[#082f42]">
+                Expert Assistance
+              </h3>
+              <p className="mt-1.5 text-[12px] leading-5 text-slate-500">
+                Professional help with documentation and applications.
+              </p>
+            </div>
+
+            <div className="flex min-h-[150px] flex-col justify-center px-6 py-5 md:px-6">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#fff4e8] text-[20px]">
+                ⚡
+              </div>
+              <h3 className="text-[15px] font-extrabold text-[#082f42]">
+                Simple Process
+              </h3>
+              <p className="mt-1.5 text-[12px] leading-5 text-slate-500">
+                Apply online and track your application with our team.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      {/* ================= STATS ================= */}
+
+      <section className="bg-white py-8">
+
+        <div className="mx-auto grid w-full max-w-[1500px] grid-cols-2 md:grid-cols-5 px-4 sm:px-8 lg:px-12">
+
+          <Stat value="8+" label="Years of Experience" />
+
+          <Stat
+            value="6,000+"
+            label="Customers Assisted"
+            border
+          />
+
+          <Stat
+            value="80+"
+            label="Bank & NBFC Partners"
+            border
+          />
+
+          <Stat
+            value="24/7"
+            label="Customer Support"
+            border
+          />
+
+          <Stat
+            value="98%"
+            label="Customer Satisfaction"
+            border
+          />
+
+        </div>
+
+      </section>
+
+
+
+
+      {/* ================= EMI CALCULATOR ================= */}
+
+      <section
+        id="emi-calculator"
+        className="bg-[#f5f8fb] py-16 sm:py-20"
+      >
+
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-6">
+
+          <SectionHeading
+            eyebrow="EMI CALCULATOR"
+            title="Plan Your Monthly EMI"
+            text="Enter the loan amount, interest rate and tenure to estimate your monthly EMI."
+          />
+
+
+          <div className="mt-9 grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
+
+
+            {/* INPUT BOX */}
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+
+              <div className="grid gap-4">
+
+
+                <label className="text-[10px] font-bold text-[#082f42]">
+
+                  Loan Amount
+
+                  <input
+                    id="emi-principal"
+                    type="number"
+                    defaultValue={2500000}
+                    min={0}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[11px] outline-none focus:border-[#08b8d4]"
+                  />
+
+                </label>
+
+
+                <label className="text-[10px] font-bold text-[#082f42]">
+
+                  Annual Interest Rate (%)
+
+                  <input
+                    id="emi-rate"
+                    type="number"
+                    defaultValue={10}
+                    min={0}
+                    step={0.1}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[11px] outline-none focus:border-[#08b8d4]"
+                  />
+
+                </label>
+
+
+                <label className="text-[10px] font-bold text-[#082f42]">
+
+                  Tenure (Years)
+
+                  <input
+                    id="emi-tenure"
+                    type="number"
+                    defaultValue={5}
+                    min={1}
+                    max={30}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[11px] outline-none focus:border-[#08b8d4]"
+                  />
+
+                </label>
+
+
+                <button
+                  onClick={calculateEMI}
+                  className="mt-1 rounded-lg bg-[#08b8d4] py-3.5 text-[9px] font-extrabold text-white shadow-lg shadow-cyan-500/15 transition hover:bg-[#079eb7]"
+                >
+                  CALCULATE EMI →
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* RESULT */}
+
+            <div className="rounded-2xl bg-[#082f42] p-6 text-white shadow-[0_16px_45px_rgba(8,47,66,.12)] sm:p-8">
+
+              <p className="text-[8px] font-bold uppercase tracking-[.22em] text-[#16c6dc]">
+                ESTIMATED REPAYMENT
+              </p>
+
+
+              <h3 className="mt-2 text-2xl font-black">
+                Your monthly EMI
+              </h3>
+
+
+              <div className="mt-7 rounded-xl bg-white/10 p-5">
+
+                <div className="text-[8px] uppercase tracking-wider text-white/45">
+                  Monthly EMI
+                </div>
+
+                <div
+                  id="emi-result"
+                  className="mt-2 text-4xl font-black text-[#16c6dc]"
+                >
+                  ₹53,118
+                </div>
+
+              </div>
+
+
+              <div className="mt-3 grid grid-cols-2 gap-3">
+
+                <div className="rounded-xl bg-white/5 p-4">
+
+                  <div className="text-[8px] uppercase tracking-wider text-white/40">
+                    Total Payment
+                  </div>
+
+                  <div
+                    id="emi-total"
+                    className="mt-1.5 text-[15px] font-black"
+                  >
+                    ₹31,87,087
+                  </div>
+
+                </div>
+
+
+                <div className="rounded-xl bg-white/5 p-4">
+
+                  <div className="text-[8px] uppercase tracking-wider text-white/40">
+                    Total Interest
+                  </div>
+
+                  <div
+                    id="emi-interest"
+                    className="mt-1.5 text-[15px] font-black"
+                  >
+                    ₹6,87,087
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              <p className="mt-5 text-[9px] leading-5 text-white/50">
+                This is an indicative calculation. Actual EMI, rate, fees and approval depend on the selected lender and your eligibility.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= LOANS ================= */}
+
+      <section
+        id="loans"
+        className="bg-[#f5f8fb] py-16 sm:py-20"
+      >
+
+        <div className="mx-auto max-w-[1420px] px-8 sm:px-10 lg:px-12">
+
+          <SectionHeading
+            eyebrow="FUNDING SOLUTIONS"
+            title="Comprehensive Loan Options"
+            text="Choose a category and explore the type of assistance you need."
+          />
+
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+            {loans.map(([n, title, text, amount]) => (
+
+              <div
+                key={title}
+                className="group min-h-[190px] rounded-2xl border border-slate-200 bg-white p-[22px] transition hover:-translate-y-1 hover:shadow-lg"
+              >
+
+                <div className="flex items-start justify-between">
+
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e9f8fb] text-[#08aeca]">
+                    {n === "01" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                        <path d="M12 3.5l7 3v5.3c0 4.2-2.8 7.7-7 9.2-4.2-1.5-7-5-7-9.2V6.5l7-3Z" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                    {n === "02" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                        <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M8 9h8M8 13h5M8 16h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                    {n === "03" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                        <path d="M4 18h16M6 18V9h12v9M8 9V6h8v3M9 13h2M13 13h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                    {n === "04" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                        <path d="M5 19h14M7 19V10h10v9M9 10V7h6v3M9 14h2M13 14h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                    {n === "05" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                        <path d="M5 15.5h14l-1.2-4.2A2 2 0 0 0 15.9 10H8.1a2 2 0 0 0-1.9 1.3L5 15.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                        <circle cx="8" cy="16.5" r="1.2" stroke="currentColor" strokeWidth="1.5"/>
+                        <circle cx="16" cy="16.5" r="1.2" stroke="currentColor" strokeWidth="1.5"/>
+                      </svg>
+                    )}
+                    {n === "06" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                        <path d="M5 4h10l4 4v12H5V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                        <path d="M15 4v5h4M8 13h8M8 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                  </div>
+
+                  <span className="text-[8px] font-bold text-slate-400">
+                    {amount}
+                  </span>
+
+                </div>
+
+
+                <h3 className="mt-4 text-[17px] font-black text-[#082f42]">
+                  {title}
+                </h3>
+
+
+                <p className="mt-2 text-[10px] leading-5 text-slate-500">
+                  {text}
+                </p>
+
+
+                <a
+                  href="#apply"
+                  className="mt-4 inline-block text-[9px] font-extrabold text-[#08aeca]"
+                >
+                  Explore option →
+                </a>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= APPLY ================= */}
+
+      <section
+        id="apply"
+        className="bg-white py-16 sm:py-20"
+      >
+
+        <div className="mx-auto grid max-w-[1240px] gap-8 px-5 sm:px-6 lg:grid-cols-[.8fr_1.2fr]">
+
+
+          <div>
+
+            <SectionEyebrow>
+              GET STARTED
+            </SectionEyebrow>
+
+
+            <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+              Apply in a few minutes.
+            </h2>
+
+
+            <p className="mt-5 max-w-lg text-[13px] leading-6 text-slate-500">
+              Share your basic requirement. Our team can contact you to understand the profile and next steps.
+            </p>
+
+
+            <div className="mt-6 space-y-2 text-[10px] font-semibold text-slate-500">
+
+              <div>✓ No commitment for an initial discussion</div>
+
+              <div>✓ Free basic eligibility discussion</div>
+
+              <div>✓ Multiple financial channels</div>
+
+              <div>✓ Human assistance</div>
+
+            </div>
+
+          </div>
+
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(8,47,66,.10)] sm:p-7">
+
+            <div className="rounded-xl bg-[#082f42] p-5 text-white">
+
+              <p className="text-[8px] font-bold uppercase tracking-[.22em] text-[#16c6dc]">
+                QUICK APPLICATION
+              </p>
+
+              <h3 className="mt-1.5 text-xl font-black">
+                Tell us what you need
+              </h3>
+
+              <p className="mt-1 text-[9px] text-white/55">
+                Basic details are enough to get started.
+              </p>
+
+            </div>
+
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+
+              <input
+                placeholder="Full Name"
+                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              />
+
+              <input
+                placeholder="Mobile Number"
+                type="tel"
+                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              />
+
+              <input
+                placeholder="Email Address"
+                type="email"
+                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              />
+
+              <select className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]">
+
+                <option>Select Loan Type</option>
+
+                {loans.map(([, title]) => (
+                  <option key={title}>
+                    {title}
+                  </option>
+                ))}
+
+              </select>
+
+
+              <input
+                placeholder="Loan Amount Required"
+                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              />
+
+
+              <select className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]">
+
+                <option>Employment Type</option>
+
+                <option>Salaried</option>
+
+                <option>Self Employed</option>
+
+                <option>Business Owner</option>
+
+                <option>Professional</option>
+
+              </select>
+
+            </div>
+
+
+            <textarea
+              placeholder="Additional details (optional)"
+              rows={3}
+              className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+            />
+
+
+            <button
+              onClick={() =>
+                alert(
+                  "Application received. Backend connection can be connected next."
+                )
+              }
+              className="mt-3 w-full rounded-lg bg-[#08b8d4] py-3.5 text-[9px] font-extrabold text-white hover:bg-[#079eb7]"
+            >
+              SUBMIT APPLICATION →
+            </button>
+
+
+            <p className="mt-2 text-center text-[8px] text-slate-400">
+              Loan approval is subject to lender eligibility and documentation.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      {/* ================= ABOUT ================= */}
+
+      <section
+        id="about"
+        className="bg-white py-16 sm:py-20"
+      >
+
+        <div className="mx-auto grid max-w-[1180px] gap-10 px-5 sm:px-6 lg:grid-cols-[.72fr_1.28fr]">
+
+          <div>
+
+            <SectionEyebrow>
+              WHY LOANKARTS
+            </SectionEyebrow>
+
+
+            <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
+              Your funding advantage.
+            </h2>
+
+
+            <p className="mt-5 text-[14px] leading-7 text-slate-500">
+              We combine loan assistance, documentation guidance and multi-channel lender access to make the process easier to understand.
+            </p>
+
+
+            <div className="mt-6 flex gap-7">
+
+              <div>
+                <div className="text-3xl font-black text-[#08aeca]">
+                  6K+
+                </div>
+
+                <div className="mt-1 text-[9px] text-slate-500">
+                  Customers
+                </div>
+              </div>
+
+
+              <div>
+                <div className="text-3xl font-black text-[#08aeca]">
+                  100+
+                </div>
+
+                <div className="mt-1 text-[9px] text-slate-500">
+                  Channels
+                </div>
+              </div>
+
+            </div>
+
+
+            <button
+              onClick={() => setBrokerModal(true)}
+              className="mt-6 rounded-lg bg-[#082f42] px-6 py-3 text-[9px] font-extrabold text-white hover:bg-[#08b8d4]"
+            >
+              WORK WITH US →
+            </button>
+
+          </div>
+
+
+          <div className="space-y-2.5">
+
+            {advantages.map(([n, title, text]) => (
+
+              <div
+                key={n}
+                className="rounded-xl border border-slate-200 px-5 py-4 transition hover:border-[#a9e4eb] hover:bg-[#fbfeff]"
+              >
+
+                <div className="flex gap-4">
+
+                  <span className="text-[11px] font-black text-[#08b8d4]">
+                    {n}
+                  </span>
+
+                  <div>
+
+                    <h3 className="text-[13px] font-black">
+                      {title}
+                    </h3>
+
+                    <p className="mt-1.5 text-[12px] leading-6 text-slate-500">
+                      {text}
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= PROCESS ================= */}
+
+      <section
+        id="process"
+        className="bg-[#082f42] py-16 text-white sm:py-20"
+      >
+
+        <div className="mx-auto max-w-[1240px] px-5 sm:px-6">
+
+          <SectionHeading
+            dark
+            eyebrow="HOW IT WORKS"
+            title="Application to Disbursement"
+            text="A simple four-stage process designed to keep the requirement organised."
+          />
+
+
+          <div className="mt-9 grid gap-6 md:grid-cols-4 md:gap-0">
+
+            {steps.map(([n, title, text, icon], index) => (
+
+              <div key={n} className="relative md:px-2.5">
+
+                <div
+                  className={`relative h-[250px] rounded-xl border p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${
+                    index === 0
+                      ? "border-[#08b8d4] bg-[#e8f8fb] text-[#082f42]"
+                      : "border-white/10 bg-white/5 text-white"
+                  }`}
+                >
+
+                  <div className="flex items-start justify-between">
+                    <div className="text-3xl font-black">
+                      {n}
+                    </div>
+
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ${
+                        index === 0
+                          ? "bg-white/70"
+                          : "bg-white/10"
+                      }`}
+                    >
+                      {icon}
+                    </div>
+                  </div>
+
+                  <h3 className="mt-5 text-[15px] font-black leading-5">
+                    {title}
+                  </h3>
+
+                  <p
+                    className={`mt-2 text-[12px] leading-6 ${
+                      index === 0
+                        ? "text-slate-600"
+                        : "text-white/55"
+                    }`}
+                  >
+                    {text}
+                  </p>
+
+                </div>
+
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= TESTIMONIALS ================= */}
+
+      <section className="bg-white py-16 sm:py-20">
+
+        <div className="mx-auto max-w-[1240px] px-5 sm:px-6">
+
+          <SectionHeading
+            eyebrow="CUSTOMER STORIES"
+            title="Trusted by Customers"
+            text="Real service experiences from people who worked with the LoanKarts team."
+          />
+
+
+          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+            {testimonials.map(([stars, role, text]) => (
+
+              <div
+                key={role + text}
+                className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
+              >
+
+                <div className="text-lg tracking-widest text-[#08b8d4]">
+                  {stars}
+                </div>
+
+                <p className="mt-4 text-[13px] leading-6 text-slate-600">
+                  “{text}”
+                </p>
+
+                <div className="mt-4 text-[11px] font-extrabold uppercase tracking-widest text-[#0a4963]">
+                  {role}
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= BANKING PARTNERS ================= */}
+
+      <section className="border-t border-slate-200 bg-white py-8 sm:py-10">
+        <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-10">
+          <div className="mb-5 text-center">
+            <div className="text-[9px] font-extrabold uppercase tracking-[.22em] text-[#08aeca]">
+              OUR BANKING & FINANCIAL PARTNERS
+            </div>
+            <h2 className="mt-1.5 text-xl font-black text-[#082f42] sm:text-2xl">
+              Trusted Financial Network
+            </h2>
+          </div>
+
+          <div className="relative overflow-hidden">
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent"
+              aria-hidden="true"
+            />
+
+            <div className="lk-no-scrollbar overflow-hidden">
+              <div className="lk-marquee flex gap-3 py-2">
+                {[...banks, ...banks].map(([name, domain], index) => (
+                  <div
+                    key={`${name}-${index}`}
+                    className="flex h-[54px] shrink-0 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#08b8d4]/50 hover:shadow-md"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50">
+                      <img
+                        src={bankLogoFiles[name] || "/sbi_co_in.ico"}
+                        alt={`${name} logo`}
+                        className="h-6 w-6 rounded object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    <span className="whitespace-nowrap text-[11px] font-bold text-[#183f55]">
+                      {name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= FOOTER ================= */}
+      <footer className="bg-[#050b20] text-white">
+        <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-6">
+
+          <div className="grid items-stretch gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+
+            {/* LEFT SIDE — NO CARD */}
+            <div className="flex flex-col justify-center py-2">
+
+              <img
+                src="/logo-white.png"
+                alt="LoanKarts"
+                className="h-auto w-[190px] object-contain"
+              />
+
+              <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+                Get in <span className="text-[#08b8d4]">Touch</span>
+              </h2>
+
+              <p className="mt-2 max-w-[430px] text-[12px] leading-5 text-white/55">
+                We’re here to help you with your loan needs. Reach out to us anytime.
+              </p>
+
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                <a
+                  href="mailto:docs@loankarts.com"
+                  className="flex items-center gap-3 text-[12px] font-semibold text-white/80 hover:text-[#08b8d4]"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#08b8d4]/10 text-[17px] text-[#08b8d4]">
+                    ✉
+                  </span>
+                  <span>
+                    <span className="block text-[8px] font-extrabold uppercase tracking-[.18em] text-[#08b8d4]">
+                      EMAIL
+                    </span>
+                    docs@loankarts.com
+                  </span>
+                </a>
+
+                <a
+                  href="tel:+919315743939"
+                  className="flex items-center gap-3 text-[12px] font-semibold text-white/80 hover:text-[#08b8d4]"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#08b8d4]/10 text-[17px] text-[#08b8d4]">
+                    ☎
+                  </span>
+                  <span>
+                    <span className="block text-[8px] font-extrabold uppercase tracking-[.18em] text-[#08b8d4]">
+                      CALL
+                    </span>
+                    +91 93157 43939
+                  </span>
+                </a>
+              </div>
+
+              <div className="mt-4 flex items-center gap-2.5">
+                <span className="mr-1 text-[9px] font-extrabold uppercase tracking-[.18em] text-white/45">
+                  Follow Us
+                </span>
+
+                <a
+                  href="#"
+                  aria-label="Facebook"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-[#08b8d4] hover:bg-[#08b8d4]"
+                >
+                  <img src="/facebook.png" alt="Facebook" className="h-5 w-5 object-contain" />
+                </a>
+
+                <a
+                  href="#"
+                  aria-label="Instagram"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-[#08b8d4] hover:bg-[#08b8d4]"
+                >
+                  <img src="/instagram.png" alt="Instagram" className="h-5 w-5 object-contain" />
+                </a>
+
+                <a
+                  href="#"
+                  aria-label="YouTube"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-[#08b8d4] hover:bg-[#08b8d4]"
+                >
+                  <img src="/youtube.png" alt="YouTube" className="h-5 w-5 object-contain" />
+                </a>
+
+                <a
+                  href="https://wa.me/919315743939"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="WhatsApp"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-[#08b8d4] hover:bg-[#08b8d4]"
+                >
+                  <img src="/whatspp.png" alt="WhatsApp" className="h-5 w-5 object-contain" />
+                </a>
+              </div>
+            </div>
+
+            {/* RIGHT SIDE — EXACTLY 2 CARDS */}
+            <div className="grid gap-5 sm:grid-cols-2">
+
+              {/* EMAIL CARD */}
+              <a
+                href="mailto:docs@loankarts.com"
+                className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#0b1428] p-6 text-center transition duration-200 hover:-translate-y-1 hover:border-[#08b8d4]/60"
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#08b8d4]/10 text-3xl text-[#08b8d4]">
+                  ✉
+                </div>
+
+                <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#08b8d4]">
+                  EMAIL US
+                </p>
+
+                <h3 className="mt-3 text-[16px] font-black text-white">
+                  docs@loankarts.com
+                </h3>
+
+                <div className="mt-4 h-[2px] w-10 bg-[#08b8d4]" />
+
+                <p className="mt-3 text-[10px] leading-5 text-white/50">
+                  Have a question or need assistance?
+                  <br />
+                  Drop us an email and our team will
+                  <br />
+                  get back to you shortly.
+                </p>
+              </a>
+
+              {/* BROKER JOIN CARD */}
+              <button
+                type="button"
+                onClick={() => setBrokerModal(true)}
+                className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-[#08b8d4]/30 bg-gradient-to-br from-[#082f42] via-[#0a5268] to-[#087d93] p-6 text-center transition duration-200 hover:-translate-y-1 hover:border-[#08b8d4]/70"
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-3xl">
+                  🤝
+                </div>
+
+                <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#16c6dc]">
+                  JOIN AS A BROKER
+                </p>
+
+                <h3 className="mt-3 text-[20px] font-black leading-tight text-white">
+                  Become a LoanKarts
+                  <br />
+                  Partner
+                </h3>
+
+                <div className="mt-4 h-[2px] w-10 bg-[#16c6dc]" />
+
+                <p className="mt-3 text-[10px] leading-5 text-white/70">
+                  Are you a loan broker, DSA, agent,
+                  <br />
+                  financial professional or business
+                  <br />
+                  partner? Join our network.
+                </p>
+
+                <span className="mt-4 rounded-lg bg-white px-5 py-2.5 text-[10px] font-extrabold text-[#082f42]">
+                  JOIN AS BROKER →
+                </span>
+              </button>
+
+            </div>
+          </div>
+
+          {/* COPYRIGHT */}
+          <div className="mt-6 border-t border-white/10 pt-3 text-center text-[9px] text-white/40">
+            © {new Date().getFullYear()} LoanKarts. All rights reserved.
+            <span className="mx-2 text-white/20">|</span>
+            Your trusted loan assistance partner
+          </div>
+
+        </div>
+      </footer>
+
+      {/* ================= WHATSAPP ================= */}
+
+      <a
+        href="https://wa.me/919315743939"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat with LoanKarts on WhatsApp"
+        className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-xl transition hover:-translate-y-1 hover:scale-105"
+      >
+        <img
+          src="/whatspp.png"
+          alt="WhatsApp"
+          className="h-9 w-9 object-contain"
+        />
+      </a>
+
+      <BrokerAuthModal
+        open={brokerModal}
+        onClose={() => setBrokerModal(false)}
+        defaultMode={brokerMode}
+      />
+
+    </main>
+  );
+}
+
+
+
+/* ================= SECTION HEADING ================= */
+
+function SectionHeading({
+  eyebrow,
+  title,
+  text,
+  dark = false,
+}: {
+  eyebrow: string;
+  title: string;
+  text: string;
+  dark?: boolean;
+}) {
+
+  return (
+
+    <div className="mx-auto max-w-[760px] text-center">
+
+      <div
+        className={`text-[9px] font-extrabold tracking-[.22em] ${
+          dark
+            ? "text-[#16c6dc]"
+            : "text-[#08aeca]"
+        }`}
+      >
+        {eyebrow}
+      </div>
+
+
+      <h2
+        className={`mt-2 text-3xl font-black leading-tight sm:text-4xl ${
+          dark
+            ? "text-white"
+            : "text-[#082f42]"
+        }`}
+      >
+        {title}
+      </h2>
+
+
+      <p
+        className={`mx-auto mt-3 max-w-[650px] text-[10px] leading-5 ${
+          dark
+            ? "text-white/55"
+            : "text-slate-500"
+        }`}
+      >
+        {text}
+      </p>
+
+    </div>
+
+  );
+}
+
+
+/* ================= EYEBROW ================= */
+
+function SectionEyebrow({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+
+  return (
+    <div className="text-[9px] font-extrabold tracking-[.22em] text-[#08aeca]">
+      {children}
     </div>
   );
+
+}
+
+
+/* ================= STAT ================= */
+
+function Stat({
+  value,
+  label,
+  border = false,
+}: {
+  value: string;
+  label: string;
+  border?: boolean;
+}) {
+
+  return (
+
+    <div
+      className={`min-h-[150px] p-5 text-center sm:p-7 ${
+        border
+          ? "border-t border-slate-200 md:border-t-0 md:border-l"
+          : ""
+      }`}
+    >
+
+      <div className="text-4xl font-black tracking-tight text-[#082f42] sm:text-5xl">
+        {value}
+      </div>
+
+      <div className="mt-2 text-[11px] font-semibold text-slate-500">
+        {label}
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+/* ================= FOOTER COLUMN ================= */
+
+function FooterColumn({
+  title,
+  items,
+}: {
+  title: string;
+  items: string[];
+}) {
+
+  const getLink = (item: string) => {
+
+    if (item === "About Us") return "#about";
+    if (item === "Contact Us") return "#contact";
+    if (item === "EMI Calculator") return "#emi-calculator";
+    if (item === "How It Works") return "#process";
+    if (item === "FAQs") return "#faq";
+
+    return "#loans";
+  };
+
+
+  return (
+
+    <div>
+
+      <h3 className="text-[10px] font-bold uppercase tracking-wider">
+        {title}
+      </h3>
+
+
+      <div className="mt-4 space-y-2 text-[9px] text-white/45">
+
+        {items.map((item) => (
+
+          <a
+            key={item}
+            href={getLink(item)}
+            className="block hover:text-[#16c6dc]"
+          >
+            {item}
+          </a>
+
+        ))}
+
+      </div>
+
+    </div>
+
+  );
+
 }

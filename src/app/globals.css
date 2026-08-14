@@ -2,25 +2,181 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #082f42;
+
+  --lk-navy: #082f42;
+  --lk-navy-dark: #061f2d;
+  --lk-blue: #174c64;
+  --lk-cyan: #08b8d4;
+  --lk-cyan-dark: #079eb7;
+
+  --lk-light: #f5f8fb;
+  --lk-border: #dce6ed;
+  --lk-text: #082f42;
+  --lk-muted: #64748b;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Arial,
+    Helvetica,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Better links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Better buttons */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Form fields */
+input,
+select,
+textarea {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--lk-cyan) !important;
+  box-shadow: 0 0 0 4px rgba(8, 184, 212, 0.1);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Range sliders */
+input[type="range"] {
+  accent-color: var(--lk-cyan);
+  cursor: pointer;
+}
+
+input[type="range"]:focus {
+  box-shadow: none;
+}
+
+/* Selection */
+::selection {
+  background: var(--lk-cyan);
+  color: #ffffff;
+}
+
+/* Smooth image rendering */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Professional scrollbar */
+::-webkit-scrollbar {
+  width: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eef3f7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9bb4c2;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lk-blue);
+}
+
+/* Better mobile tap behaviour */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent accidental horizontal scrolling */
+body {
+  overflow-x: hidden;
+}
+
+/* Reusable premium shadow */
+.lk-shadow {
+  box-shadow: 0 15px 40px rgba(8, 47, 66, 0.08);
+}
+
+.lk-shadow-lg {
+  box-shadow: 0 25px 70px rgba(8, 47, 66, 0.13);
+}
+
+/* Subtle section background */
+.lk-section {
+  background: var(--lk-light);
+}
+
+/* Mobile improvements */
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 75px;
+  }
+
+  body {
+    font-size: 15px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
