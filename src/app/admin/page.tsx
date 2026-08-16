@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -124,6 +125,25 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadFiles();
+
+    const channel = supabase
+      .channel("admin-loan-files")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "loan_files",
+        },
+        () => {
+          loadFiles();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filteredFiles = useMemo(() => {
@@ -279,44 +299,115 @@ export default function AdminPage() {
     return `₹${Number(value || 0).toLocaleString("en-IN")}`;
   }
 
+  // Older records may have the broker email saved in broker_name.
+  // Display a clean human-readable label without changing the database.
+  function displayBrokerName(file: DatabaseFile) {
+    const raw = String(file.broker_name || "").trim();
+
+    if (!raw) return "Broker Partner";
+
+    if (raw.includes("@")) {
+      const localPart = raw.split("@")[0].replace(/[._-]+/g, " ").trim();
+
+      if (!localPart) return "Broker Partner";
+
+      return localPart
+        .split(/\s+/)
+        .map(
+          (part) =>
+            part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        )
+        .join(" ");
+    }
+
+    return raw;
+  }
+
+  function statusMeta(status: FileStatus) {
+    switch (status) {
+      case "Disbursed":
+        return {
+          label: "Disbursed",
+          dot: "bg-emerald-500",
+          badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+          glow: "shadow-[0_0_0_3px_rgba(16,185,129,0.08)]",
+          animate: true,
+        };
+
+      case "Approved":
+        return {
+          label: "Approved",
+          dot: "bg-sky-500",
+          badge: "border-sky-200 bg-sky-50 text-sky-700",
+          glow: "shadow-[0_0_0_3px_rgba(14,165,233,0.06)]",
+          animate: false,
+        };
+
+      case "Processing":
+        return {
+          label: "Processing",
+          dot: "bg-amber-500",
+          badge: "border-amber-200 bg-amber-50 text-amber-700",
+          glow: "shadow-[0_0_0_3px_rgba(245,158,11,0.08)]",
+          animate: true,
+        };
+
+      case "Rejected":
+        return {
+          label: "Rejected",
+          dot: "bg-rose-500",
+          badge: "border-rose-200 bg-rose-50 text-rose-700",
+          glow: "shadow-[0_0_0_3px_rgba(244,63,94,0.05)]",
+          animate: false,
+        };
+
+      default:
+        return {
+          label: "Submitted",
+          dot: "bg-cyan-500",
+          badge: "border-cyan-200 bg-cyan-50 text-cyan-700",
+          glow: "shadow-[0_0_0_3px_rgba(6,182,212,0.08)]",
+          animate: true,
+        };
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f4f8fb]">
 
-      {/* HEADER */}
-      <header className="bg-[#073b4c] text-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      {/* PREMIUM ADMIN HEADER */}
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#061f2a]/95 text-white shadow-[0_8px_30px_rgba(0,0,0,0.16)] backdrop-blur">
+        <div className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
 
-          <div className="flex items-center">
-            <img
-              src="/loankarts-logo-white.png"
-              alt="LoanKarts"
-              className="h-14 w-auto max-w-[240px] object-contain"
-            />
+          {/* BRAND */}
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="flex h-10 w-[150px] shrink-0 items-center justify-start px-0 sm:h-11 sm:w-[175px]">
+              <img
+                src="/loankarts-logo-white.png"
+                alt="LoanKarts"
+                className="h-6 w-auto max-w-full object-contain sm:h-7"
+              />
+            </div>
+
+            <div className="hidden min-w-0 border-l border-white/15 pl-4 sm:block">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#10b7d3]">
+                Admin Portal
+              </p>
+              <p className="mt-0.5 truncate text-sm font-bold text-white">
+                LoanKarts Management Dashboard
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-
-            <a
-              href="/admin/brokers"
-              className="rounded-xl border border-white/30 px-3 py-2 text-xs font-bold hover:bg-white hover:text-[#073b4c] sm:px-5 sm:py-3 sm:text-sm"
-            >
-              Brokers
-            </a>
-
-            <a
-              href="/"
-              className="hidden rounded-xl border border-white/30 px-5 py-3 text-sm font-bold hover:bg-white hover:text-[#073b4c] md:block"
-            >
-              Main Website
-            </a>
-
+          {/* ACTIONS */}
+          <div className="flex shrink-0 items-center">
             <button
               onClick={handleLogout}
-              className="rounded-xl border border-white/30 px-3 py-2 text-xs font-bold hover:bg-white hover:text-[#073b4c] sm:px-5 sm:py-3 sm:text-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white px-4 py-2.5 text-sm font-black text-[#073b4c] shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-100"
             >
-              Logout
+              <span>Logout</span>
+              <span className="text-base">↗</span>
             </button>
-
           </div>
         </div>
       </header>
@@ -325,12 +416,12 @@ export default function AdminPage() {
       <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10">
 
         {/* TITLE */}
-        <div className="mb-7">
+        <div className="mb-5">
           <p className="font-bold uppercase tracking-wide text-[#10b7d3]">
             LoanKarts Management
           </p>
 
-          <h2 className="mt-2 text-3xl font-black text-[#073b4c] sm:text-4xl">
+          <h2 className="mt-1.5 text-3xl font-black tracking-tight text-[#073b4c] sm:text-4xl">
             Admin Dashboard
           </h2>
 
@@ -360,94 +451,89 @@ export default function AdminPage() {
         )}
 
         {/* STATS */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
 
-          <StatCard
-            title="Total Files"
-            value={stats.total}
-            icon="📁"
-          />
-
-          <StatCard
-            title="Brokers"
-            value={stats.brokers}
-            icon="👥"
-          />
-
-          <StatCard
-            title="Processing"
-            value={stats.processing}
-            icon="⏳"
-          />
-
-          <StatCard
-            title="Approved"
-            value={stats.approved}
-            icon="✅"
-          />
-
-          <StatCard
-            title="Disbursed"
-            value={stats.disbursed}
-            icon="💰"
-          />
-
-          <StatCard
-            title="Rejected"
-            value={stats.rejected}
-            icon="❌"
-          />
-
-          <MoneyCard
-            title="Loan Amount"
-            value={money(stats.totalLoanAmount)}
-            icon="💵"
-          />
-
-          <MoneyCard
-            title="Commission"
-            value={money(stats.totalCommission)}
-            icon="🧾"
-          />
+          <StatCard title="Total Files" value={stats.total} icon="FILES" />
+          <StatCard title="Brokers" value={stats.brokers} icon="TEAM" />
+          <StatCard title="Processing" value={stats.processing} icon="WORK" />
+          <StatCard title="Approved" value={stats.approved} icon="OK" />
+          <StatCard title="Disbursed" value={stats.disbursed} icon="PAID" />
+          <StatCard title="Rejected" value={stats.rejected} icon="STOP" />
 
         </div>
 
-        {/* QUICK ACTIONS */}
-        <div className="mt-7 grid gap-4 sm:grid-cols-2">
+        {/* PREMIUM CONTROL PANEL */}
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
 
           <a
             href="/admin/brokers"
-            className="rounded-2xl bg-[#073b4c] p-5 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0b5269]"
+            className="group relative overflow-hidden rounded-2xl bg-[#062f3d] p-5 text-white shadow-[0_14px_35px_rgba(6,47,61,0.16)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(6,47,61,0.22)] sm:p-6"
           >
-            <p className="text-sm font-bold text-cyan-200">
-              BROKER MANAGEMENT
-            </p>
+            <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#10b7d3]/10 transition duration-500 group-hover:scale-125" />
 
-            <h3 className="mt-1 text-xl font-black">
-              View All Brokers →
-            </h3>
+            <div className="relative">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#25c9e4]">
+                    Partner Network
+                  </p>
+                  <h3 className="mt-2 text-2xl font-black tracking-tight text-white">
+                    Broker Management
+                  </h3>
+                </div>
 
-            <p className="mt-1 text-sm text-slate-300">
-              View broker-wise files, loan amounts and commissions.
-            </p>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-lg font-black text-[#25c9e4] transition group-hover:bg-[#10b7d3] group-hover:text-white">
+                  →
+                </span>
+              </div>
+
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
+                Manage broker partners, review activity and track broker-wise loan files and commissions.
+              </p>
+
+              <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-black text-white ring-1 ring-white/10 transition group-hover:bg-white group-hover:text-[#062f3d]">
+                View All Brokers
+                <span>→</span>
+              </div>
+            </div>
           </a>
 
-          <button
-            onClick={loadFiles}
-            className="rounded-2xl bg-white p-5 text-left shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5"
-          >
-            <p className="text-sm font-bold text-[#10b7d3]">
-              DATA
-            </p>
+          <div className="rounded-2xl bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.07)] ring-1 ring-slate-200 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#10b7d3]">
+                  Financial Overview
+                </p>
+                <h3 className="mt-2 text-xl font-black text-[#062f3d]">
+                  Loan Portfolio
+                </h3>
+              </div>
 
-            <h3 className="mt-1 text-xl font-black text-[#073b4c]">
-              Refresh Applications ↻
-            </h3>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8f9fc] text-sm font-black text-[#079bb8]">
+                ₹
+              </span>
+            </div>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Load the latest loan files from Supabase.
-            </p>
-          </button>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Loan Amount
+                </p>
+                <p className="mt-2 truncate text-lg font-black text-[#062f3d]">
+                  {money(stats.totalLoanAmount)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
+                  Commission
+                </p>
+                <p className="mt-2 truncate text-lg font-black text-emerald-700">
+                  {money(stats.totalCommission)}
+                </p>
+              </div>
+            </div>
+          </div>
 
         </div>
 
@@ -542,14 +628,24 @@ export default function AdminPage() {
         {/* FILE TABLE */}
         <div className="mt-6 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
 
-          <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
+          <div className="border-b border-slate-200 px-4 py-3 sm:px-6">
 
-            <h3 className="text-xl font-black text-[#073b4c]">
-              Loan Applications
-            </h3>
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-bold text-[#073b4c] sm:text-xl">
+                Loan Applications
+              </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Live applications submitted by broker partners.
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                Live
+              </span>
+            </div>
+
+            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+              Live applications from broker partners.
             </p>
 
           </div>
@@ -567,41 +663,41 @@ export default function AdminPage() {
           ) : (
             <div className="overflow-x-auto">
 
-              <table className="w-full min-w-[900px] xl:min-w-0">
+              <table className="w-full min-w-[900px] xl:min-w-0 text-[13px]">
 
                 <thead className="bg-slate-50">
 
-                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr className="text-left text-[10px] font-black uppercase tracking-[0.08em] text-slate-500">
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       File
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Customer
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Loan
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Broker
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Status
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Commission
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Date
                     </th>
 
-                    <th className="px-5 py-4">
+                    <th className="px-4 py-3">
                       Action
                     </th>
 
@@ -622,15 +718,15 @@ export default function AdminPage() {
                         className="border-t border-slate-100 hover:bg-slate-50"
                       >
 
-                        <td className="px-5 py-5">
-                          <p className="max-w-[220px] break-all font-black text-[#073b4c]">
+                        <td className="px-4 py-3">
+                          <p className="max-w-[220px] break-all font-bold text-[#073b4c]">
                             {file.id}
                           </p>
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-4 py-3">
 
-                          <p className="font-bold text-slate-800">
+                          <p className="font-semibold text-slate-800">
                             {file.customer_name}
                           </p>
 
@@ -644,9 +740,9 @@ export default function AdminPage() {
 
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-4 py-3">
 
-                          <p className="font-semibold text-slate-700">
+                          <p className="font-medium text-slate-700">
                             {file.loan_type}
                           </p>
 
@@ -656,23 +752,37 @@ export default function AdminPage() {
 
                         </td>
 
-                        <td className="px-5 py-5 text-sm font-semibold text-slate-700">
-                          {file.broker_name}
+                        <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                          {displayBrokerName(file)}
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-4 py-3">
 
-                          <span
-                            className={`rounded-full px-3 py-1.5 text-xs font-bold ${getStatusClass(
-                              file.status
-                            )}`}
-                          >
-                            {file.status}
-                          </span>
+                          {(() => {
+                            const meta = statusMeta(file.status);
+
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-black ${meta.badge} ${meta.glow}`}
+                              >
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                  {meta.animate && (
+                                    <span
+                                      className={`absolute inline-flex h-full w-full animate-ping rounded-full ${meta.dot} opacity-60`}
+                                    />
+                                  )}
+                                  <span
+                                    className={`relative inline-flex h-2 w-2 rounded-full ${meta.dot}`}
+                                  />
+                                </span>
+                                {meta.label}
+                              </span>
+                            );
+                          })()}
 
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-4 py-3">
 
                           <p className="font-black text-green-600">
                             {money(commission)}
@@ -693,7 +803,7 @@ export default function AdminPage() {
 
                         </td>
 
-                        <td className="px-5 py-5 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-500">
                           {new Date(
                             file.created_at
                           ).toLocaleDateString("en-IN", {
@@ -703,13 +813,13 @@ export default function AdminPage() {
                           })}
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-4 py-3">
 
                           <button
                             onClick={() =>
                               openUpdate(file)
                             }
-                            className="whitespace-nowrap rounded-xl bg-[#073b4c] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0b5269]"
+                            className="whitespace-nowrap rounded-lg bg-[#073b4c] px-3.5 py-2 text-[11px] font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0b5269] hover:shadow-md"
                           >
                             Manage
                           </button>
@@ -1029,56 +1139,20 @@ function StatCard({
   icon: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
-
-      <div className="flex items-center justify-between gap-2">
-
-        <span className="text-xl sm:text-2xl">
+    <div className="group min-h-[112px] rounded-2xl bg-white px-4 py-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.045)] ring-1 ring-slate-200/90 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.09)]">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#e9f8fb] text-[8px] font-black tracking-[0.08em] text-[#079bb8] ring-1 ring-[#d7f1f6]">
           {icon}
         </span>
 
-        <span className="text-xl font-black text-[#073b4c] sm:text-2xl">
+        <span className="text-2xl font-black leading-none tracking-tight text-[#062f3d] sm:text-[27px]">
           {value}
         </span>
-
       </div>
 
-      <p className="mt-3 text-xs font-bold text-slate-500 sm:text-sm">
+      <p className="mt-4 text-[10px] font-black uppercase tracking-[0.11em] text-slate-500">
         {title}
       </p>
-
-    </div>
-  );
-}
-
-function MoneyCard({
-  title,
-  value,
-  icon,
-}: {
-  title: string;
-  value: string;
-  icon: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
-
-      <div className="flex items-center justify-between gap-2">
-
-        <span className="text-xl sm:text-2xl">
-          {icon}
-        </span>
-
-      </div>
-
-      <p className="mt-2 truncate text-base font-black text-[#073b4c] sm:text-lg">
-        {value}
-      </p>
-
-      <p className="mt-1 text-xs font-bold text-slate-500 sm:text-sm">
-        {title}
-      </p>
-
     </div>
   );
 }

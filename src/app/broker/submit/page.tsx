@@ -458,33 +458,33 @@ export default function SubmitNewFilePage() {
     const file = documents[documentName];
 
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="group rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_8px_25px_rgba(15,53,68,0.05)] transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-[0_12px_30px_rgba(15,53,68,0.08)]">
+        <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-bold text-[#0b3b53]">
+            <h3 className="text-sm font-black text-[#0b3b53]">
               {title}{" "}
               {required && (
                 <span className="text-red-500">*</span>
               )}
             </h3>
 
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">
               PDF, JPG, JPEG or PNG • Max 10 MB
             </p>
           </div>
 
-          <div className="text-2xl">📄</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-xs font-black text-[#08a9c6]">DOC</div>
         </div>
 
         {file ? (
-          <div className="rounded-xl bg-slate-50 p-3">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-700">
                   {file.name}
                 </p>
 
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -499,15 +499,15 @@ export default function SubmitNewFilePage() {
             </div>
           </div>
         ) : (
-          <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center transition hover:border-[#10b7d3] hover:bg-cyan-50">
+          <label className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-6 text-center transition hover:border-[#10b7d3] hover:bg-cyan-50">
             <div>
-              <div className="text-2xl">⬆️</div>
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-[#08a9c6] shadow-sm ring-1 ring-slate-200">↑</div>
 
-              <p className="mt-2 text-sm font-bold text-[#0b3b53]">
+              <p className="mt-2 text-sm font-black text-[#0b3b53]">
                 Choose Document
               </p>
 
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-[11px] leading-4 text-slate-500">
                 Click to select file
               </p>
             </div>
@@ -527,36 +527,49 @@ export default function SubmitNewFilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f8fb]">
-      <header className="bg-[#073b4c] text-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <div className="flex items-center">
-            <img
-              src="/loankarts-logo-white.png"
-              alt="LoanKarts"
-              className="h-14 w-auto max-w-[240px] object-contain"
-            />
+    <main className="min-h-screen bg-[#f5f8fb] text-slate-800">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#071f2a]/95 text-white shadow-[0_10px_30px_rgba(3,25,35,0.18)] backdrop-blur-md">
+        <div className="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center">
+            <div className="flex h-10 w-[155px] shrink-0 items-center sm:h-11 sm:w-[180px]">
+              <img
+                src="/loankarts-logo-white.png"
+                alt="LoanKarts"
+                style={{
+                  width: "180px",
+                  height: "44px",
+                  maxWidth: "180px",
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                  display: "block",
+                }}
+              />
+            </div>
+            <div className="ml-3 hidden border-l border-white/15 pl-3 sm:block">
+              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-[#10b7d3]">Partner Portal</p>
+              <p className="mt-0.5 text-xs font-semibold text-white/75">Loan File Submission</p>
+            </div>
           </div>
 
           <a
             href="/broker"
-            className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-bold transition hover:bg-white hover:text-[#073b4c] sm:px-5 sm:py-3"
+            className="rounded-lg border border-white/15 bg-white/5 px-3.5 py-2 text-xs font-bold text-white transition hover:border-[#10b7d3] hover:bg-[#10b7d3] sm:px-4 sm:py-2.5"
           >
             ← Back to Dashboard
           </a>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 pb-4 pt-8 sm:px-6 sm:pt-10">
-        <p className="font-bold uppercase tracking-wide text-[#10b7d3]">
+      <section className="mx-auto max-w-7xl px-4 pb-4 pt-7 sm:px-6 sm:pt-8">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#08a9c6]">
           New Loan File
         </p>
 
-        <h2 className="mt-2 text-3xl font-black text-[#073b4c] sm:text-4xl">
+        <h2 className="mt-1.5 text-2xl font-black tracking-tight text-[#073b4c] sm:text-3xl">
           Submit New File
         </h2>
 
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
           Enter customer details and upload the required
           documents to submit a new loan application to LoanKarts.
         </p>
@@ -564,7 +577,7 @@ export default function SubmitNewFilePage() {
 
       {successMessage && (
         <div className="mx-auto mb-6 max-w-7xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-green-200 bg-green-50 p-5 text-green-800">
+          <div className="rounded-2xl border border-emerald-200 bg-white p-5 text-emerald-800 shadow-sm">
             <p className="font-bold">✅ {successMessage}</p>
             <p className="mt-1 text-sm">
               The application has been saved and submitted for review.
@@ -582,7 +595,7 @@ export default function SubmitNewFilePage() {
 
       {errorMessage && (
         <div className="mx-auto mb-6 max-w-7xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
+          <div className="rounded-2xl border border-red-200 bg-white p-5 text-red-800 shadow-sm">
             <p className="font-bold">❌ Submission failed</p>
             <p className="mt-1 text-sm">{errorMessage}</p>
           </div>
@@ -591,20 +604,21 @@ export default function SubmitNewFilePage() {
 
       <form
         onSubmit={handleSubmit}
-        className="mx-auto max-w-7xl space-y-6 px-4 pb-16 sm:space-y-8 sm:px-6"
+        className="mx-auto max-w-7xl space-y-5 px-4 pb-16 sm:space-y-6 sm:px-6"
       >
         {/* CUSTOMER */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-8">
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-[#073b4c] sm:text-2xl">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,53,68,0.055)] sm:p-7">
+          <div className="mb-4 border-b border-slate-100 pb-3">
+            <div className="mb-2 h-1 w-10 rounded-full bg-[#10b7d3]" />
+            <h3 className="text-base font-black tracking-tight text-[#073b4c] sm:text-lg">
               1. Customer Details
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
               Enter the basic information of the customer.
             </p>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <Field
               label="Customer Name *"
               name="customerName"
@@ -646,19 +660,20 @@ export default function SubmitNewFilePage() {
         </section>
 
         {/* LOAN */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-8">
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-[#073b4c] sm:text-2xl">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,53,68,0.055)] sm:p-7">
+          <div className="mb-4 border-b border-slate-100 pb-3">
+            <div className="mb-2 h-1 w-10 rounded-full bg-[#10b7d3]" />
+            <h3 className="text-base font-black tracking-tight text-[#073b4c] sm:text-lg">
               2. Loan Details
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
               Select the loan type, employment type and enter the requested amount.
             </p>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
+              <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-600">
                 Loan Type *
               </label>
 
@@ -667,7 +682,7 @@ export default function SubmitNewFilePage() {
                 name="loanType"
                 value={form.loanType}
                 onChange={handleInputChange}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#10b7d3] focus:bg-white focus:ring-4 focus:ring-cyan-50"
               >
                 {loanOptions.map((loan) => (
                   <option key={loan.name} value={loan.name}>
@@ -690,7 +705,7 @@ export default function SubmitNewFilePage() {
             />
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-bold text-slate-700">
+              <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-600">
                 Employment Type *
               </label>
 
@@ -708,7 +723,7 @@ export default function SubmitNewFilePage() {
                     monthlyProfit: "",
                   }));
                 }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#10b7d3] focus:bg-white focus:ring-4 focus:ring-cyan-50"
               >
                 <option value="Salaried">Salaried</option>
                 <option value="Business Owner">Business Owner</option>
@@ -734,7 +749,7 @@ export default function SubmitNewFilePage() {
             {form.employment === "Business Owner" && (
               <>
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                  <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-600">
                     Average Monthly Business Turnover *
                   </label>
 
@@ -746,16 +761,16 @@ export default function SubmitNewFilePage() {
                     value={form.monthlyTurnover}
                     onChange={handleInputChange}
                     placeholder="₹ Example: 500000"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#10b7d3] focus:bg-white focus:ring-4 focus:ring-cyan-50"
                   />
 
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">
                     Approximate average monthly sales / turnover.
                   </p>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">
+                  <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-600">
                     Approx. Monthly Net Profit / Income *
                   </label>
 
@@ -767,10 +782,10 @@ export default function SubmitNewFilePage() {
                     value={form.monthlyProfit}
                     onChange={handleInputChange}
                     placeholder="₹ Example: 80000"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#10b7d3] focus:bg-white focus:ring-4 focus:ring-cyan-50"
                   />
 
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">
                     Approximate income/profit after regular business expenses.
                   </p>
                 </div>
@@ -793,7 +808,7 @@ export default function SubmitNewFilePage() {
             )}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-cyan-100 bg-cyan-50 p-5">
+          <div className="mt-5 rounded-2xl border border-cyan-100 bg-gradient-to-r from-cyan-50 to-slate-50 p-5">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-bold text-[#073b4c]">
@@ -808,10 +823,10 @@ export default function SubmitNewFilePage() {
                 <p className="text-sm font-bold text-slate-600">
                   Estimated Commission
                 </p>
-                <p className="mt-1 text-2xl font-black text-green-600">
+                <p className="mt-1 text-xl font-black text-emerald-600">
                   {money(estimatedCommission)}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
                   Commission is payable when the loan is Disbursed.
                 </p>
               </div>
@@ -820,13 +835,14 @@ export default function SubmitNewFilePage() {
         </section>
 
         {/* DOCUMENTS */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-8">
-          <div className="mb-6">
-            <h3 className="text-xl font-black text-[#073b4c] sm:text-2xl">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,53,68,0.055)] sm:p-7">
+          <div className="mb-4 border-b border-slate-100 pb-3">
+            <div className="mb-2 h-1 w-10 rounded-full bg-[#10b7d3]" />
+            <h3 className="text-base font-black tracking-tight text-[#073b4c] sm:text-lg">
               3. Customer Documents
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
               Upload clear copies of the customer's documents.
             </p>
 
@@ -836,7 +852,7 @@ export default function SubmitNewFilePage() {
             </div>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <DocumentUpload
               title="Aadhaar Card - Front"
               documentName="aadhaarFront"
@@ -884,13 +900,14 @@ export default function SubmitNewFilePage() {
         </section>
 
         {/* REMARKS */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-8">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,53,68,0.055)] sm:p-7">
           <div className="mb-5">
-            <h3 className="text-xl font-black text-[#073b4c] sm:text-2xl">
+            <div className="mb-2 h-1 w-10 rounded-full bg-[#10b7d3]" />
+            <h3 className="text-base font-black tracking-tight text-[#073b4c] sm:text-lg">
               4. Additional Information
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
               Add any important information about this customer or file.
             </p>
           </div>
@@ -906,7 +923,7 @@ export default function SubmitNewFilePage() {
         </section>
 
         {/* SUBMIT */}
-        <section className="flex flex-col items-stretch justify-between gap-5 rounded-3xl bg-[#073b4c] p-5 text-white sm:p-8 md:flex-row md:items-center">
+        <section className="flex flex-col items-stretch justify-between gap-4 rounded-2xl bg-[#062f3e] p-5 text-white shadow-[0_16px_35px_rgba(4,42,57,0.16)] sm:p-6 md:flex-row md:items-center">
           <div>
             <h3 className="text-xl font-black">
               Ready to submit this file?
@@ -920,7 +937,7 @@ export default function SubmitNewFilePage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full shrink-0 rounded-xl bg-[#10b7d3] px-8 py-4 text-base font-black text-white shadow-lg transition hover:bg-[#0da8c1] disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+            className="w-full shrink-0 rounded-xl bg-[#10b7d3] px-7 py-3.5 text-sm font-black text-white shadow-[0_10px_25px_rgba(16,183,211,0.25)] transition hover:-translate-y-0.5 hover:bg-[#0da8c1] disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
           >
             {submitting ? "SUBMITTING..." : "SUBMIT LOAN FILE →"}
           </button>
@@ -957,7 +974,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-bold text-slate-700">
+      <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-600">
         {label}
       </label>
 

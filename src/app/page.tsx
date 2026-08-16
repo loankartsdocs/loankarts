@@ -34,6 +34,18 @@ const loans = [
   ["06", "Education Loan", "Funding assistance for higher education and career-focused studies.", "₹1L – ₹1Cr"],
 ];
 
+const getLoanSlug = (title: string) => {
+  const slugs: Record<string, string> = {
+    "Personal Loan": "personal-loan",
+    "Business Loan": "business-loan",
+    "Home Loan": "home-loan",
+    "Loan Against Property": "loan-against-property",
+    "Car Loan": "car-loan",
+    "Education Loan": "education-loan",
+  };
+  return slugs[title] ?? title.toLowerCase().replace(/\s+/g, "-");
+};
+
 const problems = [
   ["01", "Low CIBIL", "A lower score can make normal bank routes difficult. We help identify suitable options."],
   ["02", "Bank Rejection", "Understand what went wrong and explore a better-structured application."],
@@ -982,8 +994,9 @@ export default function Home() {
 
             {loans.map(([n, title, text, amount]) => (
 
-              <div
+              <a
                 key={title}
+                href={`/loans/${getLoanSlug(title)}`}
                 className="group min-h-[190px] rounded-2xl border border-slate-200 bg-white p-[22px] transition hover:-translate-y-1 hover:shadow-lg"
               >
 
@@ -1043,15 +1056,11 @@ export default function Home() {
                   {text}
                 </p>
 
+                <span className="mt-4 inline-block text-[9px] font-extrabold text-[#08aeca]">
+                  View Details →
+                </span>
 
-                <a
-                  href="#apply"
-                  className="mt-4 inline-block text-[9px] font-extrabold text-[#08aeca]"
-                >
-                  Explore option →
-                </a>
-
-              </div>
+              </a>
 
             ))}
 

@@ -87,7 +87,7 @@ export default function BrokerManagementPage() {
       if (!map.has(id)) {
         map.set(id, {
           id,
-          name: file.broker_name || "Unknown Broker",
+          name: displayBrokerName(file.broker_name),
           total: 0,
           processing: 0,
           approved: 0,
@@ -140,6 +140,68 @@ export default function BrokerManagementPage() {
 
   function percentage(value: number) {
     return `${Number(value || 0).toFixed(2)}%`;
+  }
+
+  function displayBrokerName(name: string) {
+    const raw = String(name || "").trim();
+
+    if (!raw) return "Broker Partner";
+
+    if (raw.includes("@")) {
+      const localPart = raw.split("@")[0].replace(/[._-]+/g, " ").trim();
+
+      if (!localPart) return "Broker Partner";
+
+      return localPart
+        .split(/\s+/)
+        .map(
+          (part) =>
+            part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        )
+        .join(" ");
+    }
+
+    return raw;
+  }
+
+  function statusMeta(status: string) {
+    switch (status) {
+      case "Disbursed":
+        return {
+          label: "Disbursed",
+          dot: "bg-emerald-500",
+          badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+          animate: true,
+        };
+      case "Approved":
+        return {
+          label: "Approved",
+          dot: "bg-sky-500",
+          badge: "border-sky-200 bg-sky-50 text-sky-700",
+          animate: false,
+        };
+      case "Processing":
+        return {
+          label: "Processing",
+          dot: "bg-amber-500",
+          badge: "border-amber-200 bg-amber-50 text-amber-700",
+          animate: true,
+        };
+      case "Rejected":
+        return {
+          label: "Rejected",
+          dot: "bg-rose-500",
+          badge: "border-rose-200 bg-rose-50 text-rose-700",
+          animate: false,
+        };
+      default:
+        return {
+          label: "Submitted",
+          dot: "bg-cyan-500",
+          badge: "border-cyan-200 bg-cyan-50 text-cyan-700",
+          animate: true,
+        };
+    }
   }
 
   async function openDocument(path: string) {
@@ -367,42 +429,62 @@ export default function BrokerManagementPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#f4f8fb]">
-      {/* HEADER */}
-      <header className="bg-[#073b4c] text-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
-          <div className="flex items-center">
-            <img
-              src="/loankarts-logo-white.png"
-              alt="LoanKarts"
-              className="h-14 w-auto max-w-[240px] object-contain"
-            />
+      {/* PREMIUM ADMIN HEADER */}
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#061f2a]/95 text-white shadow-[0_8px_30px_rgba(0,0,0,0.16)] backdrop-blur">
+        <div className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+
+          {/* BRAND */}
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="flex h-10 w-[150px] shrink-0 items-center justify-start px-0 sm:h-11 sm:w-[175px]">
+              <img
+                src="/loankarts-logo-white.png"
+                alt="LoanKarts"
+                className="h-6 w-auto max-w-full object-contain sm:h-7"
+              />
+            </div>
+
+            <div className="hidden min-w-0 border-l border-white/15 pl-4 sm:block">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#10b7d3]">
+                Admin Portal
+              </p>
+              <p className="mt-0.5 truncate text-sm font-bold text-white">
+                Broker Management
+              </p>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={loadBrokers}
-              className="rounded-xl border border-[#10b7d3] px-3 py-2 text-xs font-bold hover:bg-[#10b7d3] sm:px-5 sm:py-3 sm:text-sm"
-            >
-              Refresh
-            </button>
+          {/* ACTIONS */}
+          <div className="flex shrink-0 items-center gap-2">
             <a
               href="/admin"
-              className="rounded-xl border border-white/30 px-3 py-2 text-xs font-bold hover:bg-white hover:text-[#073b4c] sm:px-5 sm:py-3 sm:text-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-xs font-black text-white transition hover:border-[#10b7d3]/50 hover:bg-[#10b7d3]/10 sm:px-4 sm:text-sm"
             >
-              ← Dashboard
+              <span>←</span>
+              <span>Dashboard</span>
             </a>
+
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/admin/login";
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-black text-[#073b4c] shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-100 sm:px-4 sm:text-sm"
+            >
+              <span>Logout</span>
+              <span>↗</span>
+            </button>
           </div>
         </div>
       </header>
 
       {/* CONTENT */}
       <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10">
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-5">
           <p className="font-bold uppercase tracking-wide text-[#10b7d3]">
             LoanKarts Management
           </p>
 
-          <h2 className="mt-2 text-3xl font-black text-[#073b4c] sm:text-4xl">
+          <h2 className="mt-1.5 text-3xl font-black tracking-tight text-[#073b4c] sm:text-4xl">
             Broker Management
           </h2>
 
@@ -412,7 +494,7 @@ export default function BrokerManagementPage() {
         </div>
 
         {/* SEARCH */}
-        <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
+        <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] ring-1 ring-slate-200 sm:p-5">
           <label className="mb-2 block text-sm font-bold text-slate-700">
             Search Broker
           </label>
@@ -420,7 +502,7 @@ export default function BrokerManagementPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search broker name..."
+            placeholder="Search broker name, email or broker ID..."
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
           />
         </div>
@@ -435,8 +517,8 @@ export default function BrokerManagementPage() {
         )}
 
         {/* BROKERS */}
-        <div className="mt-6 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="border-b border-slate-200 px-4 py-5 sm:px-6">
+        <div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-slate-200">
+          <div className="border-b border-slate-200 px-4 py-4 sm:px-6">
             <h3 className="text-xl font-black text-[#073b4c]">
               Broker Partners
             </h3>
@@ -477,9 +559,9 @@ export default function BrokerManagementPage() {
                     {filteredBrokers.map((broker) => (
                       <tr
                         key={broker.id}
-                        className="border-t border-slate-100 hover:bg-slate-50"
+                        className="border-t border-slate-100 transition hover:bg-slate-50/80"
                       >
-                        <td className="px-4 py-5">
+                        <td className="px-4 py-4">
                           <p className="break-words font-black text-[#073b4c]">
                             {broker.name}
                           </p>
@@ -491,32 +573,32 @@ export default function BrokerManagementPage() {
                           </p>
                         </td>
 
-                        <td className="px-2 py-5">
-                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">
+                        <td className="px-2 py-4">
+                          <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-black text-slate-700 ring-1 ring-slate-200">
                             {broker.total}
                           </span>
                         </td>
 
-                        <td className="px-2 py-5">
-                          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700">
+                        <td className="px-2 py-4">
+                          <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-black text-amber-700 ring-1 ring-amber-100">
                             {broker.processing}
                           </span>
                         </td>
 
-                        <td className="px-2 py-5">
-                          <span className="rounded-full bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700">
+                        <td className="px-2 py-4">
+                          <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-black text-sky-700 ring-1 ring-sky-100">
                             {broker.approved}
                           </span>
                         </td>
 
-                        <td className="px-2 py-5">
-                          <span className="rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700">
+                        <td className="px-2 py-4">
+                          <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
                             {broker.disbursed}
                           </span>
                         </td>
 
-                        <td className="px-2 py-5">
-                          <span className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">
+                        <td className="px-2 py-4">
+                          <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-black text-rose-700 ring-1 ring-rose-100">
                             {broker.rejected}
                           </span>
                         </td>
@@ -525,7 +607,7 @@ export default function BrokerManagementPage() {
                           {money(broker.amount)}
                         </td>
 
-                        <td className="px-2 py-5">
+                        <td className="px-2 py-4">
                           <p className="font-black text-green-600">
                             {money(broker.totalCommission)}
                           </p>
@@ -535,18 +617,18 @@ export default function BrokerManagementPage() {
                           </p>
                         </td>
 
-                        <td className="px-3 py-5">
+                        <td className="px-3 py-4">
                           <div className="flex flex-col gap-2">
                             <button
                               onClick={() => setSelectedBroker(broker)}
-                              className="w-full whitespace-nowrap rounded-xl bg-[#10b7d3] px-3 py-2 text-xs font-bold text-white hover:bg-[#0da8c1]"
+                              className="w-full whitespace-nowrap rounded-xl bg-[#10b7d3] px-3 py-2 text-xs font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0da8c1] hover:shadow-md"
                             >
                               View Files
                             </button>
 
                             <button
                               onClick={() => setDetailsBroker(broker)}
-                              className="w-full rounded-xl border border-[#10b7d3] px-2 py-2 text-xs font-bold text-[#073b4c] hover:bg-[#10b7d3] hover:text-white"
+                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-black text-[#073b4c] transition hover:border-[#10b7d3] hover:bg-[#e8f9fc] hover:text-[#073b4c]"
                             >
                               Broker Details
                             </button>
@@ -559,11 +641,11 @@ export default function BrokerManagementPage() {
               </div>
 
               {/* MOBILE CARDS */}
-              <div className="space-y-4 p-4 md:hidden">
+              <div className="space-y-3 p-3 md:hidden">
                 {filteredBrokers.map((broker) => (
                   <div
                     key={broker.id}
-                    className="rounded-2xl border border-slate-200 p-4 shadow-sm"
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.05)]"
                   >
                     <div className="mb-4">
                       <p className="font-black text-[#073b4c]">
@@ -657,7 +739,7 @@ export default function BrokerManagementPage() {
       {/* ========================= */}
       {selectedBroker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-5">
-          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-white/20">
             {/* MODAL HEADER */}
             <div className="flex shrink-0 items-center justify-between bg-[#073b4c] px-5 py-4 text-white sm:px-6 sm:py-5">
               <div className="min-w-0">
@@ -690,7 +772,7 @@ export default function BrokerManagementPage() {
                   {selectedBroker.fileList.map((file) => (
                     <div
                       key={file.id}
-                      className="rounded-2xl border border-slate-200 p-4 sm:p-5"
+                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
                     >
                       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                         <div className="min-w-0 flex-1">
@@ -796,19 +878,27 @@ export default function BrokerManagementPage() {
                           </div>
                         </div>
 
-                        <span
-                          className={`w-fit shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
-                            file.status === "Disbursed"
-                              ? "bg-green-100 text-green-700"
-                              : file.status === "Approved"
-                              ? "bg-blue-100 text-blue-700"
-                              : file.status === "Rejected"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
-                          {file.status}
-                        </span>
+                        {(() => {
+                          const meta = statusMeta(file.status);
+
+                          return (
+                            <span
+                              className={`inline-flex w-fit shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-black ${meta.badge}`}
+                            >
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                {meta.animate && (
+                                  <span
+                                    className={`absolute inline-flex h-full w-full animate-ping rounded-full ${meta.dot} opacity-60`}
+                                  />
+                                )}
+                                <span
+                                  className={`relative inline-flex h-2 w-2 rounded-full ${meta.dot}`}
+                                />
+                              </span>
+                              {meta.label}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -834,7 +924,7 @@ export default function BrokerManagementPage() {
       {/* ========================= */}
       {detailsBroker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-5">
-          <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-white/20">
             {/* HEADER */}
             <div className="flex shrink-0 items-center justify-between bg-[#073b4c] px-5 py-4 text-white sm:px-6 sm:py-5">
               <div className="min-w-0">
