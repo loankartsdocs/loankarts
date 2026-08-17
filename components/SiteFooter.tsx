@@ -178,7 +178,7 @@ export default function SiteFooter() {
               </div>
 
               <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#16c6dc]">
-                JOIN AS A BROKER
+                JOIN AS A CONNECTOR
               </p>
 
               <h3 className="mt-3 text-[20px] font-black leading-tight text-white">
@@ -190,7 +190,7 @@ export default function SiteFooter() {
               <div className="mt-4 h-[2px] w-10 bg-[#16c6dc]" />
 
               <p className="mt-3 text-[10px] leading-5 text-white/70">
-                Are you a loan broker, DSA, agent,
+                Are you a loan connector, DSA, agent,
                 <br />
                 financial professional or business
                 <br />
@@ -198,7 +198,7 @@ export default function SiteFooter() {
               </p>
 
               <span className="mt-4 rounded-lg bg-white px-5 py-2.5 text-[10px] font-extrabold text-[#082f42]">
-                JOIN AS BROKER →
+                JOIN AS CONNECTOR →
               </span>
             </button>
 

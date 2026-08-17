@@ -304,12 +304,12 @@ export default function AdminPage() {
   function displayBrokerName(file: DatabaseFile) {
     const raw = String(file.broker_name || "").trim();
 
-    if (!raw) return "Broker Partner";
+    if (!raw) return "Connector Partner";
 
     if (raw.includes("@")) {
       const localPart = raw.split("@")[0].replace(/[._-]+/g, " ").trim();
 
-      if (!localPart) return "Broker Partner";
+      if (!localPart) return "Connector Partner";
 
       return localPart
         .split(/\s+/)
@@ -426,7 +426,7 @@ export default function AdminPage() {
           </h2>
 
           <p className="mt-2 text-sm text-slate-600 sm:text-base">
-            Manage broker applications, loan files, statuses and commissions.
+            Manage connector applications, loan files, statuses and commissions.
           </p>
         </div>
 
@@ -454,7 +454,7 @@ export default function AdminPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
 
           <StatCard title="Total Files" value={stats.total} icon="FILES" />
-          <StatCard title="Brokers" value={stats.brokers} icon="TEAM" />
+          <StatCard title="Connectors" value={stats.brokers} icon="TEAM" />
           <StatCard title="Processing" value={stats.processing} icon="WORK" />
           <StatCard title="Approved" value={stats.approved} icon="OK" />
           <StatCard title="Disbursed" value={stats.disbursed} icon="PAID" />
@@ -478,7 +478,7 @@ export default function AdminPage() {
                     Partner Network
                   </p>
                   <h3 className="mt-2 text-2xl font-black tracking-tight text-white">
-                    Broker Management
+                    Connector Management
                   </h3>
                 </div>
 
@@ -488,11 +488,11 @@ export default function AdminPage() {
               </div>
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-                Manage broker partners, review activity and track broker-wise loan files and commissions.
+                Manage connector partners, review activity and track connector-wise loan files and commissions.
               </p>
 
               <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-black text-white ring-1 ring-white/10 transition group-hover:bg-white group-hover:text-[#062f3d]">
-                View All Brokers
+                View All Connectors
                 <span>→</span>
               </div>
             </div>
@@ -550,7 +550,7 @@ export default function AdminPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search File ID, Customer, Mobile, Broker, Loan Type or City..."
+                placeholder="Search File ID, Customer, Mobile, Connector, Loan Type or City..."
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
               />
             </div>
@@ -645,7 +645,7 @@ export default function AdminPage() {
             </div>
 
             <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-              Live applications from broker partners.
+              Live applications from connector partners.
             </p>
 
           </div>
@@ -682,7 +682,7 @@ export default function AdminPage() {
                     </th>
 
                     <th className="px-4 py-3">
-                      Broker
+                      Connector
                     </th>
 
                     <th className="px-4 py-3">
@@ -938,7 +938,7 @@ export default function AdminPage() {
                   />
 
                   <Info
-                    label="Broker"
+                    label="Connector"
                     value={selectedFile.broker_name}
                   />
 
@@ -1034,7 +1034,7 @@ export default function AdminPage() {
                   <div className="mt-3 rounded-xl border border-green-200 bg-green-50 p-4">
 
                     <p className="text-xs font-bold uppercase text-green-700">
-                      Broker Commission
+                      Connector Commission
                     </p>
 
                     <p className="mt-1 text-2xl font-black text-green-700">
@@ -1074,7 +1074,7 @@ export default function AdminPage() {
                     setNewUpdate(e.target.value)
                   }
                   rows={5}
-                  placeholder="Write the latest update for the broker..."
+                  placeholder="Write the latest update for the connector..."
                   className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
                 />
 

@@ -45,7 +45,7 @@ const documentLabels: Record<string, string> = {
 
 export default function BrokerDashboard() {
   const [files, setFiles] = useState<LoanFile[]>([]);
-  const [brokerName, setBrokerName] = useState("Broker Partner");
+  const [brokerName, setBrokerName] = useState("Connector Partner");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<LoanFile | null>(null);
@@ -77,7 +77,7 @@ export default function BrokerDashboard() {
 
       setBrokerName(
         metadataName ||
-          (typeof user.email === "string" ? user.email.split("@")[0] : "Broker Partner")
+          (typeof user.email === "string" ? user.email.split("@")[0] : "Connector Partner")
       );
 
       const { data, error } = await supabase
@@ -288,7 +288,7 @@ export default function BrokerDashboard() {
                 Partner Portal
               </p>
               <p className="mt-0.5 text-xs text-white/55">
-                LoanKarts Broker Dashboard
+                LoanKarts Connector Dashboard
               </p>
             </div>
           </a>
@@ -305,35 +305,6 @@ export default function BrokerDashboard() {
 
       {/* CONTENT */}
       <section className="mx-auto max-w-[1280px] px-5 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <div className="relative overflow-hidden rounded-[28px] bg-[#062536] px-6 py-8 text-white shadow-2xl sm:px-8 lg:px-10">
-          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#08b8d4]/10 blur-3xl" />
-          <div className="absolute -bottom-28 right-1/3 h-56 w-56 rounded-full bg-[#08b8d4]/10 blur-3xl" />
-
-          <div className="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-center">
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#08b8d4]">
-                WELCOME, {brokerName}
-              </p>
-
-              <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-                Broker Dashboard
-              </h2>
-
-              <p className="mt-2 max-w-[620px] text-sm leading-6 text-white/60 sm:text-base">
-                Track your submitted loan files, monitor application progress,
-                and view your latest commission updates.
-              </p>
-            </div>
-
-            <a
-              href="/broker/submit"
-              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#08b8d4] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-[#079eb7]"
-            >
-              +&nbsp; SUBMIT NEW FILE
-            </a>
-          </div>
-        </div>
-
         {/* ERROR */}
         {errorMessage && (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
@@ -355,7 +326,94 @@ export default function BrokerDashboard() {
         )}
 
         {/* STATS */}
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
+        {/* CONNECTOR DASHBOARD + COMMISSION CARDS */}
+        <div className="mt-7 grid gap-5 lg:grid-cols-[1.25fr_1fr]">
+          {/* DARK CONNECTOR DASHBOARD CARD */}
+          <div className="relative overflow-hidden rounded-[28px] bg-[#062536] p-7 text-white shadow-xl sm:p-8">
+            <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#08b8d4]/10" />
+            <div className="absolute -bottom-24 right-1/4 h-48 w-48 rounded-full bg-[#08b8d4]/5 blur-2xl" />
+
+            <div className="relative">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#08b8d4]">
+                PARTNER NETWORK
+              </p>
+
+              <div className="mt-2 flex items-start justify-between gap-5">
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight sm:text-3xl">
+                    Connector Dashboard
+                  </h3>
+
+                  <p className="mt-3 max-w-[650px] text-sm leading-6 text-white/65 sm:text-base">
+                    Manage your connector profile, track submitted loan files,
+                    monitor application progress and stay updated on your
+                    commission activity.
+                  </p>
+                </div>
+
+                <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-2xl text-[#08b8d4] sm:flex">
+                  →
+                </div>
+              </div>
+
+              <a
+                href="/broker/submit"
+                className="mt-7 inline-flex items-center rounded-xl bg-white/10 px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-white/15"
+              >
+                Submit New File&nbsp; →
+              </a>
+            </div>
+          </div>
+
+          {/* WHITE COMMISSION CARD */}
+          <div className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-xl sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#08b8d4]">
+                  FINANCIAL OVERVIEW
+                </p>
+
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-[#062536] sm:text-3xl">
+                  Commission
+                </h3>
+              </div>
+
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 text-xl font-black text-[#08b8d4]">
+                ₹
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl bg-[#f7fafc] p-5">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
+                  Loan Amount
+                </p>
+
+                <p className="mt-3 text-2xl font-black tracking-tight text-[#062536]">
+                  {money(
+                    files.reduce(
+                      (sum, file) => sum + Number(file.loan_amount || 0),
+                      0
+                    )
+                  )}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-green-100 bg-green-50 p-5">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-green-700">
+                  Your Commission
+                </p>
+
+                <p className="mt-3 text-2xl font-black tracking-tight text-green-700">
+                  {money(stats.totalCommission)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           <Stat
             title="Total Files"
             value={stats.total}
@@ -392,15 +450,10 @@ export default function BrokerDashboard() {
             icon="❌"
           />
 
-          <MoneyStat
-            title="Commission"
-            value={stats.totalCommission}
-            icon="💰"
-          />
         </div>
 
         {/* FILES */}
-        <div className="mt-7 overflow-hidden rounded-[28px] bg-white shadow-xl shadow-slate-200/50 ring-1 ring-slate-200">
+        <div id="my-loan-files" className="mt-7 overflow-hidden rounded-[28px] bg-white shadow-xl shadow-slate-200/50 ring-1 ring-slate-200">
           <div className="flex flex-col justify-between gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:px-6 md:flex-row md:items-center">
             <div>
               <h3 className="text-xl font-black tracking-tight text-[#073b4c]">
@@ -617,7 +670,7 @@ export default function BrokerDashboard() {
         </div>
 
         <div className="mt-5 flex flex-col justify-between gap-2 px-1 text-xs text-slate-400 sm:flex-row">
-          <p>LoanKarts Broker Partner Portal</p>
+          <p>LoanKarts Connector Partner Portal</p>
           <p>Secure file tracking &amp; commission updates</p>
         </div>
       </section>
@@ -628,7 +681,7 @@ export default function BrokerDashboard() {
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#050b20]/80 p-3 backdrop-blur-md sm:p-5"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="broker-file-title"
+          aria-labelledby="connector-file-title"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setSelectedFile(null);
@@ -647,7 +700,7 @@ export default function BrokerDashboard() {
                 </p>
 
                 <h3
-                  id="broker-file-title"
+                  id="connector-file-title"
                   className="mt-1 truncate text-xl font-black sm:text-2xl"
                 >
                   {selectedFile.customer_name}
@@ -1008,7 +1061,7 @@ function MoneyStat({
   return (
     <div className="rounded-2xl border border-green-100 bg-gradient-to-br from-white to-green-50 px-4 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-[18px] shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-green-100 bg-green-50 text-[18px] shadow-sm">
           💰
         </div>
 
@@ -1049,7 +1102,7 @@ function Stat({
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#08b8d4]/30 hover:shadow-md">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#062536] text-[18px] shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-100 bg-cyan-50 text-[18px] shadow-sm">
           {iconMap[icon] || "•"}
         </div>
 

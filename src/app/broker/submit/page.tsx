@@ -391,7 +391,7 @@ export default function SubmitNewFilePage() {
           status: "Submitted",
           update_text: "New loan file submitted successfully.",
           broker_name:
-            String(user.user_metadata?.full_name || user.email || "Broker Partner").trim(),
+            String(user.user_metadata?.full_name || user.email || "Connector Partner").trim(),
           broker_id: user.id,
           document_paths: documentPaths,
         });
@@ -812,7 +812,7 @@ export default function SubmitNewFilePage() {
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-bold text-[#073b4c]">
-                  Broker Commission Rate
+                  Connector Commission Rate
                 </p>
                 <p className="mt-1 text-2xl font-black text-[#073b4c]">
                   {selectedLoan.rate}%

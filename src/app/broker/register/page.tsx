@@ -93,11 +93,11 @@ export default function BrokerRegisterPage() {
             </p>
 
             <h1 className="mt-2 text-3xl font-black tracking-tight text-[#082f42]">
-              Become a Broker Partner
+              Become a Connector Partner
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Create your LoanKarts broker account and join our partner network.
+              Create your LoanKarts connector account and join our partner network.
             </p>
           </div>
 
@@ -207,13 +207,13 @@ export default function BrokerRegisterPage() {
           >
             {loading
               ? "Creating Account..."
-              : "CREATE BROKER ACCOUNT →"}
+              : "CREATE CONNECTOR ACCOUNT →"}
           </button>
 
           {/* LOGIN */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-500">
-              Already have a broker account?
+              Already have a connector account?
             </p>
 
             <a

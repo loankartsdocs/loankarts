@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import BrokerAuthModal from "../../components/BrokerAuthModal";
+import { FormEvent, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 
 const banks = [
@@ -26,25 +26,13 @@ const banks = [
 ];
 
 const loans = [
-  ["01", "Personal Loan", "Funding for personal needs, emergencies and planned expenses.", "₹50K – ₹25L"],
-  ["02", "Business Loan", "Funding support for working capital, expansion and business needs.", "₹1L – ₹5Cr"],
-  ["03", "Home Loan", "Finance for purchase, construction and balance transfer.", "₹5L – ₹5Cr"],
-  ["04", "Loan Against Property", "Unlock property value for business or personal requirements.", "₹10L – ₹5Cr"],
-  ["05", "Car Loan", "Financing assistance for new and pre-owned vehicles.", "₹1L – ₹50L"],
-  ["06", "Education Loan", "Funding assistance for higher education and career-focused studies.", "₹1L – ₹1Cr"],
+  ["01", "Personal Loan", "Funding for personal needs, emergencies and planned expenses.", "₹50K – ₹25L", "personal-loan"],
+  ["02", "Business Loan", "Funding support for working capital, expansion and business needs.", "₹1L – ₹5Cr", "business-loan"],
+  ["03", "Home Loan", "Finance for purchase, construction and balance transfer.", "₹5L – ₹5Cr", "home-loan"],
+  ["04", "Loan Against Property", "Unlock property value for business or personal requirements.", "₹10L – ₹5Cr", "loan-against-property"],
+  ["05", "Car Loan", "Financing assistance for new and pre-owned vehicles.", "₹1L – ₹50L", "car-loan"],
+  ["06", "Education Loan", "Funding assistance for higher education and career-focused studies.", "₹1L – ₹1Cr", "education-loan"],
 ];
-
-const getLoanSlug = (title: string) => {
-  const slugs: Record<string, string> = {
-    "Personal Loan": "personal-loan",
-    "Business Loan": "business-loan",
-    "Home Loan": "home-loan",
-    "Loan Against Property": "loan-against-property",
-    "Car Loan": "car-loan",
-    "Education Loan": "education-loan",
-  };
-  return slugs[title] ?? title.toLowerCase().replace(/\s+/g, "-");
-};
 
 const problems = [
   ["01", "Low CIBIL", "A lower score can make normal bank routes difficult. We help identify suitable options."],
@@ -111,24 +99,6 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("All");
 
   const [brokerModal, setBrokerModal] = useState(false);
-  const [brokerMode, setBrokerMode] = useState<"login" | "register">("login");
-
-  useEffect(() => {
-    const openBroker = (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        mode?: "login" | "register";
-      }>;
-
-      setBrokerMode(customEvent.detail?.mode || "login");
-      setBrokerModal(true);
-    };
-
-    window.addEventListener("open-broker-auth", openBroker);
-
-    return () => {
-      window.removeEventListener("open-broker-auth", openBroker);
-    };
-  }, []);
 
   const calculateEMI = () => {
     const principal = Number(
@@ -199,28 +169,22 @@ export default function Home() {
           font-family: inherit;
         }
 
-        /* FIXED LOGO SIZE — prevents large logo flash on refresh */
+        /* PROFESSIONAL LOGO SIZE */
         header a[aria-label="LoanKarts"] {
           width: 160px !important;
           height: 40px !important;
-          min-width: 160px !important;
-          min-height: 40px !important;
-          max-width: 160px !important;
-          max-height: 40px !important;
-          overflow: hidden !important;
+          overflow: visible !important;
           display: flex !important;
           align-items: center !important;
-          flex: 0 0 160px !important;
         }
 
         header a[aria-label="LoanKarts"] img {
           display: block !important;
           width: 160px !important;
+          max-width: 160px !important;
           height: 40px !important;
           min-width: 160px !important;
           min-height: 40px !important;
-          max-width: 160px !important;
-          max-height: 40px !important;
           object-fit: contain !important;
         }
 
@@ -337,22 +301,22 @@ export default function Home() {
           <a
             href="#home"
             aria-label="LoanKarts"
-            className="relative flex h-[40px] w-[160px] min-h-[40px] min-w-[160px] shrink-0 items-center overflow-hidden"
-            style={{ width: "160px", height: "40px" }}
+            className="relative shrink-0"
           >
+
             <img
               src="/loankarts-logo-transparent.png"
               alt="LoanKarts"
               width={160}
               height={40}
-              className="block h-[40px] w-[160px] object-contain"
+              className="h-[40px] w-[160px] max-w-[160px] object-contain"
               style={{
                 width: "160px",
                 height: "40px",
                 maxWidth: "160px",
-                maxHeight: "40px",
               }}
             />
+
           </a>
 
 
@@ -786,7 +750,7 @@ export default function Home() {
           />
 
           <Stat
-            value="80+"
+            value="100+"
             label="Bank & NBFC Partners"
             border
           />
@@ -992,12 +956,13 @@ export default function Home() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 
-            {loans.map(([n, title, text, amount]) => (
+            {loans.map(([n, title, text, amount, slug]) => (
 
               <a
                 key={title}
-                href={`/loans/${getLoanSlug(title)}`}
-                className="group min-h-[190px] rounded-2xl border border-slate-200 bg-white p-[22px] transition hover:-translate-y-1 hover:shadow-lg"
+                href={`/loans/${slug}`}
+                className="group block min-h-[190px] cursor-pointer rounded-2xl border border-slate-200 bg-white p-[22px] transition hover:-translate-y-1 hover:border-[#b7e7ed] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#08b8d4] focus:ring-offset-2"
+                aria-label={`View ${title} details`}
               >
 
                 <div className="flex items-start justify-between">
@@ -1056,8 +1021,9 @@ export default function Home() {
                   {text}
                 </p>
 
+
                 <span className="mt-4 inline-block text-[9px] font-extrabold text-[#08aeca]">
-                  View Details →
+                  Explore option →
                 </span>
 
               </a>
@@ -1683,7 +1649,6 @@ export default function Home() {
       <BrokerAuthModal
         open={brokerModal}
         onClose={() => setBrokerModal(false)}
-        defaultMode={brokerMode}
       />
 
     </main>
@@ -1691,6 +1656,466 @@ export default function Home() {
 }
 
 
+
+/* ================= BROKER AUTH MODAL ================= */
+
+function BrokerAuthModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+
+  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [forgotMode, setForgotMode] = useState(false);
+
+  if (!open) return null;
+
+  const changeMode = (newMode: "login" | "register") => {
+    setMode(newMode);
+    setForgotMode(false);
+    setErrorMessage("");
+    setSuccessMessage("");
+  };
+
+  async function handleForgotPassword() {
+    const resetEmail = email.trim().toLowerCase();
+    if (!resetEmail) { setErrorMessage("Please enter your email address first."); return; }
+    setLoading(true); setErrorMessage(""); setSuccessMessage("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/broker/reset-password`,
+      });
+      if (error) { setErrorMessage(error.message); return; }
+      setSuccessMessage("Password reset link sent. Please check your email and follow the secure link.");
+      setForgotMode(false);
+    } catch { setErrorMessage("Unable to send the reset link. Please try again."); }
+    finally { setLoading(false); }
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+
+    setLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          setLoading(false);
+          return;
+        }
+
+        window.location.href = "/broker";
+        return;
+      }
+
+      if (!name.trim()) {
+        setErrorMessage("Please enter your full name.");
+        setLoading(false);
+        return;
+      }
+
+      if (!mobile.trim()) {
+        setErrorMessage("Please enter your mobile number.");
+        setLoading(false);
+        return;
+      }
+
+      if (password.length < 6) {
+        setErrorMessage("Password must be at least 6 characters.");
+        setLoading(false);
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setErrorMessage("Passwords do not match.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: name.trim(),
+            mobile: mobile.trim(),
+            role: "broker",
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        window.location.href = "/broker";
+        return;
+      }
+
+      setSuccessMessage(
+        "Account created successfully. Please check your email to verify your account."
+      );
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#020817]/75 px-4 py-4 backdrop-blur-sm"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative flex max-h-[92vh] w-full max-w-[820px] overflow-hidden rounded-[26px] border border-white/10 bg-white shadow-2xl">
+
+        {/* CLOSE */}
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xl font-semibold text-white transition hover:bg-white/20"
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+        {/* ================= LEFT BRAND PANEL ================= */}
+
+        <div className="hidden w-[36%] shrink-0 flex-col justify-between bg-[#062536] p-7 text-white md:flex">
+
+          <div>
+            <img
+              src="/logo-white.png"
+              alt="LoanKarts"
+              className="h-auto w-[145px] object-contain"
+            />
+
+            <div className="mt-14">
+              <p className="text-[9px] font-extrabold uppercase tracking-[0.24em] text-[#08b8d4]">
+                LOANKARTS PARTNER
+              </p>
+
+              <h2 className="mt-3 text-[25px] font-black leading-[1.12]">
+                Grow your business
+                <span className="mt-1 block text-[#08b8d4]">
+                  with LoanKarts.
+                </span>
+              </h2>
+
+              <p className="mt-4 text-[12px] leading-5 text-white/55">
+                Join our partner network and grow your loan business with
+                professional support.
+              </p>
+            </div>
+
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#08b8d4]/10 text-sm text-[#08b8d4]">
+                  ✓
+                </div>
+                <p className="text-[12px] font-bold text-white/90">
+                  Easy Partner Access
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#08b8d4]/10 text-sm text-[#08b8d4]">
+                  ✓
+                </div>
+                <p className="text-[12px] font-bold text-white/90">
+                  Professional Support
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[9px] text-white/30">
+            Your trusted loan assistance partner
+          </p>
+        </div>
+
+        {/* ================= RIGHT FORM ================= */}
+
+        <div className="min-w-0 flex-1 overflow-y-auto bg-white">
+
+          {/* MOBILE BRAND */}
+
+          <div className="bg-[#062536] px-6 pb-5 pt-6 text-white md:hidden">
+
+            <img
+              src="/logo-white.png"
+              alt="LoanKarts"
+              className="h-auto w-[145px] object-contain"
+            />
+
+            <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#08b8d4]">
+              LOANKARTS PARTNER
+            </p>
+
+          </div>
+
+          <div className="p-6 sm:p-8">
+
+            {/* TITLE */}
+
+            {mode === "login" && (
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.10)]" />
+                Secure Access
+              </div>
+            )}
+
+            <div className="pr-8">
+
+              <h2 className="text-[25px] font-black leading-tight text-[#082f42] sm:text-[28px]">
+                {mode === "login"
+                  ? "Broker Login"
+                  : "Become a Broker Partner"}
+              </h2>
+
+              <p className="mt-2 max-w-[430px] text-[13px] leading-5 text-slate-500">
+                {mode === "login"
+                  ? "Sign in to access your LoanKarts partner dashboard."
+                  : "Create your broker account and join the LoanKarts partner network."}
+              </p>
+
+            </div>
+
+            {/* TABS */}
+
+            <div className="mt-5 flex rounded-xl bg-[#f1f7f9] p-1">
+
+              <button
+                type="button"
+                onClick={() => changeMode("login")}
+                className={`flex-1 rounded-lg py-2.5 text-[13px] font-extrabold transition ${
+                  mode === "login"
+                    ? "bg-white text-[#073b4c] shadow-sm"
+                    : "text-slate-500 hover:text-[#073b4c]"
+                }`}
+              >
+                Login
+              </button>
+
+              <button
+                type="button"
+                onClick={() => changeMode("register")}
+                className={`flex-1 rounded-lg py-2.5 text-[13px] font-extrabold transition ${
+                  mode === "register"
+                    ? "bg-white text-[#073b4c] shadow-sm"
+                    : "text-slate-500 hover:text-[#073b4c]"
+                }`}
+              >
+                Create Account
+              </button>
+
+            </div>
+
+            {/* FORM */}
+
+            <form onSubmit={handleSubmit} className="mt-5">
+
+              {errorMessage && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-[12px] leading-5 text-red-700">
+                  <p className="font-bold">Please check your details</p>
+                  <p>{errorMessage}</p>
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-[12px] leading-5 text-green-700">
+                  <p className="font-bold">✓ Account Created</p>
+                  <p>{successMessage}</p>
+                </div>
+              )}
+
+              {/* REGISTER FIELDS */}
+
+              {mode === "register" && (
+                <>
+                  <label className="block text-[13px] font-bold text-[#082f42]">
+                    Full Name
+
+                    <input
+                      required
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                      className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+                    />
+                  </label>
+
+                  <label className="mt-3.5 block text-[13px] font-bold text-[#082f42]">
+                    Mobile Number
+
+                    <input
+                      required
+                      type="tel"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                      placeholder="+91 Enter mobile number"
+                      autoComplete="tel"
+                      className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+                    />
+                  </label>
+                </>
+              )}
+
+              {/* EMAIL */}
+
+              <label
+                className={`block text-[13px] font-bold text-[#082f42] ${
+                  mode === "login" ? "" : "mt-3.5"
+                }`}
+              >
+                Email Address
+
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+                />
+              </label>
+
+              {/* PASSWORD */}
+
+              <label className="mt-3.5 block text-[13px] font-bold text-[#082f42]">
+                <div className="flex items-center justify-between">
+                  <span>Password</span>
+                  {mode === "login" && (
+                    <button type="button" onClick={() => { setForgotMode((v) => !v); setErrorMessage(""); setSuccessMessage(""); }} className="text-[12px] font-extrabold text-[#08aeca] hover:underline">
+                      {forgotMode ? "Back to Login" : "Forgot Password?"}
+                    </button>
+                  )}
+                </div>
+                {!forgotMode && (
+                  <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 6 characters" autoComplete={mode === "login" ? "current-password" : "new-password"} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50" />
+                )}
+              </label>
+
+              {forgotMode && mode === "login" && (
+                <div className="mt-4 rounded-2xl border border-cyan-100 bg-[#f4fbfd] p-4">
+                  <p className="text-[12px] font-extrabold text-[#082f42]">Reset your broker password</p>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">Enter your registered email above. We’ll send you a secure password reset link.</p>
+                  <button type="button" onClick={handleForgotPassword} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#073b4c] px-4 text-[12px] font-extrabold text-white transition hover:bg-[#0b5269] disabled:cursor-not-allowed disabled:opacity-60">
+                    {loading ? "Sending Reset Link..." : "SEND RESET LINK →"}
+                  </button>
+                </div>
+              )}
+
+              {/* CONFIRM PASSWORD */}
+
+              {mode === "register" && (
+                <label className="mt-3.5 block text-[13px] font-bold text-[#082f42]">
+                  Confirm Password
+
+                  <input
+                    required
+                    type="password"
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
+                    autoComplete="new-password"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+                  />
+                </label>
+              )}
+
+              {/* BUTTON */}
+
+              {!forgotMode && (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-[#08b8d4] px-5 text-[13px] font-extrabold text-white shadow-lg shadow-cyan-500/15 transition hover:bg-[#079eb7] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                  {loading
+                    ? mode === "login"
+                      ? "Signing in..."
+                      : "Creating Account..."
+                    : mode === "login"
+                    ? "LOGIN TO BROKER PANEL →"
+                    : "CREATE BROKER ACCOUNT →"}
+                </button>
+              )}
+
+              {/* SWITCH */}
+
+              {!forgotMode && (
+                <p className="mt-4 text-center text-[13px] text-slate-500">
+
+                  {mode === "login" ? (
+                  <>
+                    Don't have a broker account?{" "}
+
+                    <button
+                      type="button"
+                      onClick={() => changeMode("register")}
+                      className="font-extrabold text-[#08aeca] hover:underline"
+                    >
+                      Create Account
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Already have a broker account?{" "}
+
+                    <button
+                      type="button"
+                      onClick={() => changeMode("login")}
+                      className="font-extrabold text-[#08aeca] hover:underline"
+                    >
+                      Login
+                    </button>
+                  </>
+                )}
+
+                </p>
+              )}
+
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
 
 /* ================= SECTION HEADING ================= */
 

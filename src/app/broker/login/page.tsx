@@ -60,7 +60,7 @@ export default function BrokerLoginPage() {
             </p>
 
             <h1 className="mt-2 text-3xl font-black tracking-tight text-[#082f42]">
-              Broker Login
+              Connector Login
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -119,20 +119,20 @@ export default function BrokerLoginPage() {
           >
             {loading
               ? "Signing in..."
-              : "LOGIN TO BROKER PANEL →"}
+              : "LOGIN TO CONNECTOR PANEL →"}
           </button>
 
           {/* SIGNUP */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-500">
-              Don't have a broker account?
+              Don't have a connector account?
             </p>
 
             <a
               href="/broker/register"
               className="mt-1 inline-block text-sm font-extrabold text-[#08aeca] hover:underline"
             >
-              Create a Broker Account →
+              Create a Connector Account →
             </a>
           </div>
 

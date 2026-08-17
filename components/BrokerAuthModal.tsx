@@ -248,14 +248,14 @@ export default function BrokerAuthModal({
 
               <h2 className="mt-1 text-[25px] font-black leading-tight text-[#082f42] sm:text-[28px]">
                 {mode === "login"
-                  ? "Broker Login"
-                  : "Become a Broker Partner"}
+                  ? "Connector Login"
+                  : "Become a Connector Partner"}
               </h2>
 
               <p className="mt-2 max-w-[420px] text-[12px] leading-5 text-slate-500">
                 {mode === "login"
                   ? "Sign in to access your LoanKarts partner dashboard."
-                  : "Create your broker account and join the LoanKarts partner network."}
+                  : "Create your connector account and join the LoanKarts partner network."}
               </p>
 
             </div>
@@ -411,8 +411,8 @@ export default function BrokerAuthModal({
                     ? "Signing in..."
                     : "Creating Account..."
                   : mode === "login"
-                  ? "LOGIN TO BROKER PANEL →"
-                  : "CREATE BROKER ACCOUNT →"}
+                  ? "LOGIN TO CONNECTOR PANEL →"
+                  : "CREATE CONNECTOR ACCOUNT →"}
               </button>
 
               {/* SWITCH */}
@@ -420,7 +420,7 @@ export default function BrokerAuthModal({
 
                 {mode === "login" ? (
                   <>
-                    Don't have a broker account?{" "}
+                    Don't have a connector account?{" "}
                     <button
                       type="button"
                       onClick={() => changeMode("register")}
@@ -431,7 +431,7 @@ export default function BrokerAuthModal({
                   </>
                 ) : (
                   <>
-                    Already have a broker account?{" "}
+                    Already have a connector account?{" "}
                     <button
                       type="button"
                       onClick={() => changeMode("login")}

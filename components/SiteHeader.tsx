@@ -255,7 +255,7 @@ export default function SiteHeader() {
               onClick={openBrokerLogin}
               className="ml-2 flex h-[48px] items-center justify-center rounded-lg border border-slate-300 bg-white px-6 !text-[12px] !font-extrabold text-[#082f42] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#08b8d4] hover:bg-[#f7fdfe] hover:shadow-md"
             >
-              BROKER LOGIN →
+              CONNECTOR LOGIN →
             </button>
 
             {/* ================= APPLY NOW ================= */}
@@ -378,7 +378,7 @@ export default function SiteHeader() {
                 onClick={openBrokerLogin}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white py-3 text-[10px] font-extrabold text-[#082f42] transition-all hover:border-[#08b8d4] hover:bg-[#f7fdfe]"
               >
-                BROKER LOGIN →
+                CONNECTOR LOGIN →
               </button>
 
               {/* MOBILE APPLY */}

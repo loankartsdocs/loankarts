@@ -118,7 +118,7 @@ export default function AdminLoginPage() {
             </h1>
 
             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
-              Sign in to manage broker partners, loan applications and
+              Sign in to manage connector partners, loan applications and
               commissions.
             </p>
           </div>

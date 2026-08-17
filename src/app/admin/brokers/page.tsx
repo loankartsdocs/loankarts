@@ -145,12 +145,12 @@ export default function BrokerManagementPage() {
   function displayBrokerName(name: string) {
     const raw = String(name || "").trim();
 
-    if (!raw) return "Broker Partner";
+    if (!raw) return "Connector Partner";
 
     if (raw.includes("@")) {
       const localPart = raw.split("@")[0].replace(/[._-]+/g, " ").trim();
 
-      if (!localPart) return "Broker Partner";
+      if (!localPart) return "Connector Partner";
 
       return localPart
         .split(/\s+/)
@@ -448,7 +448,7 @@ export default function BrokerManagementPage() {
                 Admin Portal
               </p>
               <p className="mt-0.5 truncate text-sm font-bold text-white">
-                Broker Management
+                Connector Management
               </p>
             </div>
           </div>
@@ -485,24 +485,24 @@ export default function BrokerManagementPage() {
           </p>
 
           <h2 className="mt-1.5 text-3xl font-black tracking-tight text-[#073b4c] sm:text-4xl">
-            Broker Management
+            Connector Management
           </h2>
 
           <p className="mt-2 text-sm text-slate-600 sm:text-base">
-            View broker activity, loan file performance and commissions.
+            View connector activity, loan file performance and commissions.
           </p>
         </div>
 
         {/* SEARCH */}
         <div className="rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] ring-1 ring-slate-200 sm:p-5">
           <label className="mb-2 block text-sm font-bold text-slate-700">
-            Search Broker
+            Search Connector
           </label>
 
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search broker name, email or broker ID..."
+            placeholder="Search connector name, email or connector ID..."
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
           />
         </div>
@@ -510,7 +510,7 @@ export default function BrokerManagementPage() {
         {/* ERROR */}
         {error && (
           <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
-            <p className="font-bold">Unable to load brokers</p>
+            <p className="font-bold">Unable to load connectors</p>
 
             <p className="mt-1 text-sm">{error}</p>
           </div>
@@ -520,21 +520,21 @@ export default function BrokerManagementPage() {
         <div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] ring-1 ring-slate-200">
           <div className="border-b border-slate-200 px-4 py-4 sm:px-6">
             <h3 className="text-xl font-black text-[#073b4c]">
-              Broker Partners
+              Connector Partners
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Brokers are shown from submitted loan files.
+              Connectors are shown from submitted loan files.
             </p>
           </div>
 
           {loading ? (
             <div className="px-6 py-14 text-center text-slate-500">
-              Loading brokers...
+              Loading connectors...
             </div>
           ) : filteredBrokers.length === 0 ? (
             <div className="px-6 py-14 text-center text-slate-500">
-              No brokers found.
+              No connectors found.
             </div>
           ) : (
             <>
@@ -543,7 +543,7 @@ export default function BrokerManagementPage() {
                 <table className="w-full table-fixed">
                   <thead className="bg-slate-50">
                     <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                      <th className="w-[22%] px-4 py-4">Broker</th>
+                      <th className="w-[22%] px-4 py-4">Connector</th>
                       <th className="w-[8%] px-2 py-4">Files</th>
                       <th className="w-[9%] px-2 py-4">Processing</th>
                       <th className="w-[9%] px-2 py-4">Approved</th>
@@ -568,7 +568,7 @@ export default function BrokerManagementPage() {
 
                           <p className="mt-1 break-all text-[11px] text-slate-400">
                             {broker.id === "unknown"
-                              ? "Broker ID unavailable"
+                              ? "Connector ID unavailable"
                               : broker.id}
                           </p>
                         </td>
@@ -630,7 +630,7 @@ export default function BrokerManagementPage() {
                               onClick={() => setDetailsBroker(broker)}
                               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-black text-[#073b4c] transition hover:border-[#10b7d3] hover:bg-[#e8f9fc] hover:text-[#073b4c]"
                             >
-                              Broker Details
+                              Connector Details
                             </button>
                           </div>
                         </td>
@@ -798,7 +798,7 @@ export default function BrokerManagementPage() {
                           {file.status === "Disbursed" ? (
                             <div className="mt-3 rounded-xl bg-green-50 p-4">
                               <p className="text-xs font-bold uppercase tracking-wide text-green-700">
-                                Broker Commission
+                                Connector Commission
                               </p>
 
                               <div className="mt-2 flex flex-wrap items-center gap-6">
@@ -933,7 +933,7 @@ export default function BrokerManagementPage() {
                 </h3>
 
                 <p className="text-xs text-slate-300 sm:text-sm">
-                  Broker Details
+                  Connector Details
                 </p>
               </div>
 
@@ -1002,7 +1002,7 @@ export default function BrokerManagementPage() {
                 {/* TOTAL COMMISSION */}
                 <div className="rounded-2xl bg-green-50 p-4 sm:col-span-2 sm:p-5">
                   <p className="text-sm font-bold text-green-700">
-                    TOTAL BROKER COMMISSION
+                    TOTAL CONNECTOR COMMISSION
                   </p>
 
                   <p className="mt-2 break-words text-3xl font-black text-green-700">
