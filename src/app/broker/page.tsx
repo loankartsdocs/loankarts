@@ -46,6 +46,7 @@ const documentLabels: Record<string, string> = {
 export default function BrokerDashboard() {
   const [files, setFiles] = useState<LoanFile[]>([]);
   const [brokerName, setBrokerName] = useState("Connector Partner");
+  const [connectorCode, setConnectorCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<LoanFile | null>(null);
@@ -79,6 +80,61 @@ export default function BrokerDashboard() {
         metadataName ||
           (typeof user.email === "string" ? user.email.split("@")[0] : "Connector Partner")
       );
+
+      // Load the broker's real permanent connector ID.
+      // First try connector_profiles using the logged-in Supabase user id.
+      // If the profile table uses a different id, fall back to the broker email.
+      // Finally, use the connector_code already stored on this broker's loan files.
+      let currentConnectorCode = "";
+      let profileFullName = "";
+
+      const { data: profileById, error: profileIdError } = await supabase
+        .from("connector_profiles")
+        .select("connector_code, full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profileIdError && profileById?.connector_code) {
+        currentConnectorCode = String(profileById.connector_code).trim();
+        profileFullName = String(profileById.full_name || "").trim();
+      }
+
+      if (!currentConnectorCode && user.email) {
+        const { data: profileByEmail, error: profileEmailError } = await supabase
+          .from("connector_profiles")
+          .select("connector_code, full_name")
+          .ilike("email", user.email.trim())
+          .maybeSingle();
+
+        if (!profileEmailError && profileByEmail?.connector_code) {
+          currentConnectorCode = String(profileByEmail.connector_code).trim();
+          profileFullName = String(profileByEmail.full_name || "").trim();
+        }
+      }
+
+      // Existing loan files also carry the permanent connector_code.
+      // This keeps the dashboard working even if connector_profiles is not
+      // readable for the current session because of Supabase RLS.
+      if (!currentConnectorCode) {
+        const { data: latestBrokerFile, error: brokerFileError } = await supabase
+          .from("loan_files")
+          .select("connector_code")
+          .eq("broker_id", user.id)
+          .not("connector_code", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!brokerFileError && latestBrokerFile?.connector_code) {
+          currentConnectorCode = String(latestBrokerFile.connector_code).trim();
+        }
+      }
+
+      if (profileFullName) {
+        setBrokerName(profileFullName);
+      }
+
+      setConnectorCode(currentConnectorCode);
 
       const { data, error } = await supabase
         .from("loan_files")
@@ -290,43 +346,37 @@ export default function BrokerDashboard() {
               <p className="mt-0.5 text-xs text-white/55">
                 LoanKarts Connector Dashboard
               </p>
+
             </div>
           </a>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-extrabold text-white transition hover:border-red-300/40 hover:bg-red-500/10 hover:text-red-100 sm:px-5 sm:text-sm"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            {/* CONNECTOR CODE — always visible in the top header */}
+            {connectorCode && (
+              <div className="inline-flex items-center gap-2 rounded-xl border border-[#08b8d4]/35 bg-[#08b8d4]/10 px-3 py-2">
+                <span className="hidden text-[9px] font-extrabold uppercase tracking-[0.16em] text-white/50 sm:inline">
+                  Connector ID
+                </span>
+                <span className="text-[11px] font-black tracking-wide text-[#08b8d4] sm:text-xs">
+                  {connectorCode}
+                </span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-extrabold text-white transition hover:border-red-300/40 hover:bg-red-500/10 hover:text-red-100 sm:px-5 sm:text-sm"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
       {/* CONTENT */}
       <section className="mx-auto max-w-[1280px] px-5 py-8 sm:px-6 lg:px-8 lg:py-10">
-        {/* ERROR */}
-        {errorMessage && (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
-            <p className="font-bold">
-              ❌ Unable to load files
-            </p>
-
-            <p className="mt-1 text-sm">
-              {errorMessage}
-            </p>
-
-            <button
-              onClick={loadFiles}
-              className="mt-4 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {/* STATS */}
-        {/* CONNECTOR DASHBOARD + COMMISSION CARDS */}
+        {/* CONNECTOR OVERVIEW CARDS */}
         <div className="mt-7 grid gap-5 lg:grid-cols-[1.25fr_1fr]">
           {/* DARK CONNECTOR DASHBOARD CARD */}
           <div className="relative overflow-hidden rounded-[28px] bg-[#062536] p-7 text-white shadow-xl sm:p-8">
@@ -344,6 +394,7 @@ export default function BrokerDashboard() {
                     Connector Dashboard
                   </h3>
 
+
                   <p className="mt-3 max-w-[650px] text-sm leading-6 text-white/65 sm:text-base">
                     Manage your connector profile, track submitted loan files,
                     monitor application progress and stay updated on your
@@ -351,16 +402,13 @@ export default function BrokerDashboard() {
                   </p>
                 </div>
 
-                <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-2xl text-[#08b8d4] sm:flex">
-                  →
-                </div>
               </div>
 
               <a
                 href="/broker/submit"
-                className="mt-7 inline-flex items-center rounded-xl bg-white/10 px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-white/15"
+                className="mt-7 inline-flex items-center rounded-xl bg-[#08b8d4] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-[#079eb7]"
               >
-                Submit New File&nbsp; →
+                +&nbsp; SUBMIT NEW FILE
               </a>
             </div>
           </div>
@@ -412,48 +460,8 @@ export default function BrokerDashboard() {
           </div>
         </div>
 
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-          <Stat
-            title="Total Files"
-            value={stats.total}
-            icon="📁"
-          />
-
-          <Stat
-            title="Submitted"
-            value={stats.submitted}
-            icon="📨"
-          />
-
-          <Stat
-            title="Processing"
-            value={stats.processing}
-            icon="⏳"
-          />
-
-          <Stat
-            title="Approved"
-            value={stats.approved}
-            icon="✅"
-          />
-
-          <Stat
-            title="Disbursed"
-            value={stats.disbursed}
-            icon="💰"
-          />
-
-          <Stat
-            title="Rejected"
-            value={stats.rejected}
-            icon="❌"
-          />
-
-        </div>
-
         {/* FILES */}
-        <div id="my-loan-files" className="mt-7 overflow-hidden rounded-[28px] bg-white shadow-xl shadow-slate-200/50 ring-1 ring-slate-200">
+        <div className="mt-7 overflow-hidden rounded-[28px] bg-white shadow-xl shadow-slate-200/50 ring-1 ring-slate-200">
           <div className="flex flex-col justify-between gap-4 border-b border-slate-200 bg-white px-5 py-5 sm:px-6 md:flex-row md:items-center">
             <div>
               <h3 className="text-xl font-black tracking-tight text-[#073b4c]">
@@ -1061,7 +1069,7 @@ function MoneyStat({
   return (
     <div className="rounded-2xl border border-green-100 bg-gradient-to-br from-white to-green-50 px-4 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-green-100 bg-green-50 text-[18px] shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-[18px] shadow-sm">
           💰
         </div>
 
@@ -1102,7 +1110,7 @@ function Stat({
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#08b8d4]/30 hover:shadow-md">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-100 bg-cyan-50 text-[18px] shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#062536] text-[18px] shadow-sm">
           {iconMap[icon] || "•"}
         </div>
 

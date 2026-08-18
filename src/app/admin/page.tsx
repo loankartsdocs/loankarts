@@ -11,6 +11,21 @@ type FileStatus =
   | "Disbursed"
   | "Rejected";
 
+type CustomerApplication = {
+  id: string;
+  customer_name: string;
+  mobile: string;
+  email: string | null;
+  loan_type: string;
+  loan_amount: number;
+  employment: string;
+  remarks: string | null;
+  status: "New" | "Contacted" | "Processing" | "Approved" | "Rejected" | "Closed";
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type DatabaseFile = {
   id: string;
   customer_name: string;
@@ -78,6 +93,30 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [customerApplications, setCustomerApplications] = useState<CustomerApplication[]>([]);
+  const [customerLoading, setCustomerLoading] = useState(true);
+  const [customerError, setCustomerError] = useState("");
+
+  async function loadCustomerApplications() {
+    setCustomerLoading(true);
+    setCustomerError("");
+
+    const { data, error } = await supabase
+      .from("customer_applications")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      setCustomerError(error.message);
+      setCustomerLoading(false);
+      return;
+    }
+
+    setCustomerApplications((data || []) as CustomerApplication[]);
+    setCustomerLoading(false);
+  }
+
   async function loadFiles() {
     setLoading(true);
     setErrorMessage("");
@@ -125,6 +164,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadFiles();
+    loadCustomerApplications();
 
     const channel = supabase
       .channel("admin-loan-files")
@@ -141,8 +181,24 @@ export default function AdminPage() {
       )
       .subscribe();
 
+    const customerChannel = supabase
+      .channel("admin-customer-applications")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "customer_applications",
+        },
+        () => {
+          loadCustomerApplications();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(customerChannel);
     };
   }, []);
 
@@ -536,6 +592,110 @@ export default function AdminPage() {
           </div>
 
         </div>
+
+        {/* CUSTOMER LEADS */}
+        <section className="mt-6 overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#10b7d3]">
+                WEBSITE LEADS
+              </p>
+              <h3 className="mt-1 text-xl font-black text-[#073b4c]">
+                Customer Applications
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Applications submitted directly from the LoanKarts website.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-700">
+                {customerApplications.length} Leads
+              </span>
+              <button
+                onClick={loadCustomerApplications}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-[#073b4c] hover:bg-slate-50"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {customerError && (
+            <div className="m-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+              <p className="font-bold">Unable to load customer applications.</p>
+              <p className="mt-1 text-xs">{customerError}</p>
+            </div>
+          )}
+
+          {customerLoading ? (
+            <div className="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+              Loading customer leads...
+            </div>
+          ) : customerApplications.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <p className="text-base font-black text-[#073b4c]">No customer applications yet.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                New website applications will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-[13px]">
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    <th className="px-5 py-3">Customer</th>
+                    <th className="px-5 py-3">Loan</th>
+                    <th className="px-5 py-3">Employment</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Date</th>
+                    <th className="px-5 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customerApplications.map((customer) => (
+                    <tr key={customer.id} className="border-t border-slate-100 hover:bg-slate-50">
+                      <td className="px-5 py-4">
+                        <p className="font-black text-[#073b4c]">{customer.customer_name}</p>
+                        <p className="mt-1 text-xs text-slate-500">{customer.mobile}</p>
+                        {customer.email && (
+                          <p className="mt-1 text-xs text-slate-400">{customer.email}</p>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="font-bold text-slate-700">{customer.loan_type}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          ₹{Number(customer.loan_amount || 0).toLocaleString("en-IN")}
+                        </p>
+                      </td>
+                      <td className="px-5 py-4 text-slate-600">{customer.employment}</td>
+                      <td className="px-5 py-4">
+                        <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[10px] font-black text-cyan-700">
+                          {customer.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-xs text-slate-500">
+                        {new Date(customer.created_at).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td className="px-5 py-4">
+                        <a
+                          href={`/admin/customers/${customer.id}`}
+                          className="inline-flex items-center justify-center rounded-xl bg-[#073b4c] px-4 py-2 text-[10px] font-black !text-white transition hover:bg-[#0b5269] hover:!text-white"
+                        >
+                          OPEN CUSTOMER →
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
         {/* SEARCH + FILTER */}
         <div className="mt-7 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

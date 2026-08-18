@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -25,13 +26,22 @@ const banks = [
   ["Central Bank of India", "centralbankofindia.co.in"],
 ];
 
-const loans = [
-  ["01", "Personal Loan", "Funding for personal needs, emergencies and planned expenses.", "₹50K – ₹25L", "personal-loan"],
-  ["02", "Business Loan", "Funding support for working capital, expansion and business needs.", "₹1L – ₹5Cr", "business-loan"],
-  ["03", "Home Loan", "Finance for purchase, construction and balance transfer.", "₹5L – ₹5Cr", "home-loan"],
-  ["04", "Loan Against Property", "Unlock property value for business or personal requirements.", "₹10L – ₹5Cr", "loan-against-property"],
-  ["05", "Car Loan", "Financing assistance for new and pre-owned vehicles.", "₹1L – ₹50L", "car-loan"],
-  ["06", "Education Loan", "Funding assistance for higher education and career-focused studies.", "₹1L – ₹1Cr", "education-loan"],
+type Loan = [
+  id: string,
+  title: string,
+  description: string,
+  amount: string,
+  subTypes?: string[],
+];
+
+const loans: Loan[] = [
+  ["01", "Personal Loan", "Funding for personal needs, emergencies and planned expenses.", "₹50K – ₹50L"],
+  ["02", "Business Loan", "Funding support for working capital, expansion and business needs.", "₹1L – ₹5Cr"],
+  ["03", "Home Loan", "Finance for purchase, construction and balance transfer.", "₹5L – ₹100Cr"],
+  ["04", "Loan Against Property", "Unlock property value for business or personal requirements.", "₹5L – ₹100Cr"],
+  ["05", "Car Loan", "Financing assistance for new and pre-owned vehicles.", "₹1L – ₹1Cr"],
+  ["06", "Education Loan", "Funding assistance for higher education and career-focused studies.", "₹1L – ₹1Cr"],
+  ["07", "Working Capital", "DD • CC • OD • MSME • LC • BG • CGTMSE", "₹20L – ₹200Cr", ["DD", "CC", "OD", "MSME", "LC", "BG", "CGTMSE"]],
 ];
 
 const problems = [
@@ -99,6 +109,54 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("All");
 
   const [brokerModal, setBrokerModal] = useState(false);
+
+  const [applicationName, setApplicationName] = useState("");
+  const [applicationMobile, setApplicationMobile] = useState("");
+  const [applicationEmail, setApplicationEmail] = useState("");
+  const [applicationLoanType, setApplicationLoanType] = useState("");
+  const [applicationAmount, setApplicationAmount] = useState("");
+  const [applicationEmployment, setApplicationEmployment] = useState("");
+  const [applicationDetails, setApplicationDetails] = useState("");
+  const [applicationSending, setApplicationSending] = useState(false);
+
+  const submitLoanApplication = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const mobile = applicationMobile.replace(/\D/g, "");
+
+    if (
+      !applicationName.trim() ||
+      mobile.length !== 10 ||
+      !applicationLoanType ||
+      !applicationAmount.trim() ||
+      !applicationEmployment
+    ) {
+      alert("Please fill all required details and enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    setApplicationSending(true);
+
+    const message = [
+      "🏦 *NEW LOAN APPLICATION - LOANKARTS*",
+      "",
+      `👤 *Name:* ${applicationName.trim()}`,
+      `📱 *Mobile:* ${mobile}`,
+      `📧 *Email:* ${applicationEmail.trim() || "Not provided"}`,
+      `🏦 *Loan Type:* ${applicationLoanType}`,
+      `💰 *Loan Amount:* ${applicationAmount.trim()}`,
+      `💼 *Employment Type:* ${applicationEmployment}`,
+      `📝 *Additional Details:* ${applicationDetails.trim() || "Not provided"}`,
+      "",
+      "Please contact this customer regarding the loan requirement.",
+    ].join("\n");
+
+    const whatsappUrl =
+      `https://wa.me/919990954351?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    setApplicationSending(false);
+  };
 
   const calculateEMI = () => {
     const principal = Number(
@@ -179,13 +237,9 @@ export default function Home() {
         }
 
         header a[aria-label="LoanKarts"] img {
-          display: block !important;
           width: 160px !important;
           max-width: 160px !important;
-          height: 40px !important;
-          min-width: 160px !important;
-          min-height: 40px !important;
-          object-fit: contain !important;
+          height: auto !important;
         }
 
         @keyframes lkReveal {
@@ -301,22 +355,17 @@ export default function Home() {
           <a
             href="#home"
             aria-label="LoanKarts"
-            className="relative shrink-0"
+            className="flex h-[48px] w-[190px] shrink-0 items-center"
           >
-
             <img
               src="/loankarts-logo-transparent.png"
               alt="LoanKarts"
-              width={160}
-              height={40}
-              className="h-[40px] w-[160px] max-w-[160px] object-contain"
-              style={{
-                width: "160px",
-                height: "40px",
-                maxWidth: "160px",
-              }}
+              width="190"
+              height="48"
+              loading="eager"
+              decoding="async"
+              className="block h-[48px] w-[190px] object-contain object-left"
             />
-
           </a>
 
 
@@ -419,7 +468,7 @@ export default function Home() {
   onClick={() => setBrokerModal(true)}
   className="ml-2 flex h-[48px] items-center justify-center rounded-lg border border-slate-300 bg-white px-6 !text-[12px] !font-extrabold text-[#082f42] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#08b8d4] hover:bg-[#f7fdfe] hover:shadow-md"
 >
-  BROKER LOGIN →
+  CONNECTOR LOGIN →
 </button>
 
 <a
@@ -542,7 +591,7 @@ export default function Home() {
                 onClick={() => setBrokerModal(true)}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white py-3 text-[10px] font-extrabold text-[#082f42] transition-all hover:border-[#08b8d4] hover:bg-[#f7fdfe]"
               >
-                BROKER LOGIN →
+                CONNECTOR LOGIN →
               </button>
 
 
@@ -750,7 +799,7 @@ export default function Home() {
           />
 
           <Stat
-            value="100+"
+            value="80+"
             label="Bank & NBFC Partners"
             border
           />
@@ -954,79 +1003,90 @@ export default function Home() {
           />
 
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-7 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
 
-            {loans.map(([n, title, text, amount, slug]) => (
+            {loans.map(([n, title, text, amount, subTypes]) => (
 
-              <a
-                key={title}
-                href={`/loans/${slug}`}
-                className="group block min-h-[190px] cursor-pointer rounded-2xl border border-slate-200 bg-white p-[22px] transition hover:-translate-y-1 hover:border-[#b7e7ed] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#08b8d4] focus:ring-offset-2"
-                aria-label={`View ${title} details`}
+              <Link
+                key={`${n}-${title}`}
+                href={`/loans/${title.toLowerCase().replace(/\s+/g, "-")}`}
+                className="group block min-h-[168px] rounded-[18px] border border-slate-200/90 bg-white p-[18px] shadow-[0_8px_24px_rgba(8,47,66,.045)] transition-all duration-200 hover:-translate-y-1 hover:border-[#b9eaf1] hover:shadow-[0_14px_32px_rgba(8,47,66,.10)]"
               >
 
                 <div className="flex items-start justify-between">
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e9f8fb] text-[#08aeca]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e9f8fb] text-[#08aeca]">
                     {n === "01" && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
                         <path d="M12 3.5l7 3v5.3c0 4.2-2.8 7.7-7 9.2-4.2-1.5-7-5-7-9.2V6.5l7-3Z" stroke="currentColor" strokeWidth="1.8"/>
                         <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                     {n === "02" && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
                         <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
                         <path d="M8 9h8M8 13h5M8 16h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                       </svg>
                     )}
                     {n === "03" && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
                         <path d="M4 18h16M6 18V9h12v9M8 9V6h8v3M9 13h2M13 13h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                     {n === "04" && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
                         <path d="M5 19h14M7 19V10h10v9M9 10V7h6v3M9 14h2M13 14h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                     {n === "05" && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
                         <path d="M5 15.5h14l-1.2-4.2A2 2 0 0 0 15.9 10H8.1a2 2 0 0 0-1.9 1.3L5 15.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
                         <circle cx="8" cy="16.5" r="1.2" stroke="currentColor" strokeWidth="1.5"/>
                         <circle cx="16" cy="16.5" r="1.2" stroke="currentColor" strokeWidth="1.5"/>
                       </svg>
                     )}
                     {n === "06" && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
                         <path d="M5 4h10l4 4v12H5V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
                         <path d="M15 4v5h4M8 13h8M8 16h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                       </svg>
                     )}
+                    {n === "07" && (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+                        <rect x="3.5" y="5" width="17" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                        <path d="M3.5 9h17M7 13h4M7 16h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                      </svg>
+                    )}
                   </div>
 
-                  <span className="text-[8px] font-bold text-slate-400">
-                    {amount}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[8px] font-extrabold text-slate-400">
+                      {amount}
+                    </span>
+
+
+                  </div>
 
                 </div>
 
 
-                <h3 className="mt-4 text-[17px] font-black text-[#082f42]">
+                <h3 className="mt-3.5 text-[15px] font-black tracking-[-.15px] text-[#082f42]">
                   {title}
                 </h3>
 
 
-                <p className="mt-2 text-[10px] leading-5 text-slate-500">
-                  {text}
+                <p className="mt-1.5 text-[9px] leading-4.5 text-slate-500">
+                  {subTypes && subTypes.length > 0
+                    ? subTypes.join(" • ")
+                    : text}
                 </p>
 
 
-                <span className="mt-4 inline-block text-[9px] font-extrabold text-[#08aeca]">
+                <span className="mt-3 inline-block text-[8px] font-extrabold text-[#08aeca]">
                   Explore option →
                 </span>
 
-              </a>
+              </Link>
 
             ))}
 
@@ -1079,104 +1139,109 @@ export default function Home() {
           </div>
 
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(8,47,66,.10)] sm:p-7">
-
+          <form
+            onSubmit={submitLoanApplication}
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(8,47,66,.10)] sm:p-7"
+          >
             <div className="rounded-xl bg-[#082f42] p-5 text-white">
-
               <p className="text-[8px] font-bold uppercase tracking-[.22em] text-[#16c6dc]">
                 QUICK APPLICATION
               </p>
-
               <h3 className="mt-1.5 text-xl font-black">
                 Tell us what you need
               </h3>
-
               <p className="mt-1 text-[9px] text-white/55">
                 Basic details are enough to get started.
               </p>
-
             </div>
 
-
             <div className="mt-5 grid gap-3 md:grid-cols-2">
-
               <input
-                placeholder="Full Name"
+                required
+                value={applicationName}
+                onChange={(e) => setApplicationName(e.target.value)}
+                placeholder="Full Name *"
                 className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
               />
 
               <input
-                placeholder="Mobile Number"
+                required
+                value={applicationMobile}
+                onChange={(e) =>
+                  setApplicationMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+                }
+                placeholder="Mobile Number *"
                 type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
               />
 
               <input
+                value={applicationEmail}
+                onChange={(e) => setApplicationEmail(e.target.value)}
                 placeholder="Email Address"
                 type="email"
                 className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
               />
 
-              <select className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]">
-
-                <option>Select Loan Type</option>
-
+              <select
+                required
+                value={applicationLoanType}
+                onChange={(e) => setApplicationLoanType(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              >
+                <option value="">Select Loan Type *</option>
                 {loans.map(([, title]) => (
-                  <option key={title}>
+                  <option key={title} value={title}>
                     {title}
                   </option>
                 ))}
-
               </select>
 
-
               <input
-                placeholder="Loan Amount Required"
+                required
+                value={applicationAmount}
+                onChange={(e) => setApplicationAmount(e.target.value)}
+                placeholder="Loan Amount Required *"
                 className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
               />
 
-
-              <select className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]">
-
-                <option>Employment Type</option>
-
-                <option>Salaried</option>
-
-                <option>Self Employed</option>
-
-                <option>Business Owner</option>
-
-                <option>Professional</option>
-
+              <select
+                required
+                value={applicationEmployment}
+                onChange={(e) => setApplicationEmployment(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              >
+                <option value="">Employment Type *</option>
+                <option value="Salaried">Salaried</option>
+                <option value="Self Employed">Self Employed</option>
+                <option value="Business Owner">Business Owner</option>
+                <option value="Professional">Professional</option>
               </select>
-
             </div>
 
-
             <textarea
+              value={applicationDetails}
+              onChange={(e) => setApplicationDetails(e.target.value)}
               placeholder="Additional details (optional)"
               rows={3}
               className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
             />
 
-
             <button
-              onClick={() =>
-                alert(
-                  "Application received. Backend connection can be connected next."
-                )
-              }
-              className="mt-3 w-full rounded-lg bg-[#08b8d4] py-3.5 text-[9px] font-extrabold text-white hover:bg-[#079eb7]"
+              type="submit"
+              disabled={applicationSending}
+              className="mt-3 w-full rounded-lg bg-[#08b8d4] py-3.5 text-[9px] font-extrabold text-white transition hover:bg-[#079eb7] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              SUBMIT APPLICATION →
+              {applicationSending ? "OPENING WHATSAPP..." : "SUBMIT APPLICATION →"}
             </button>
 
-
             <p className="mt-2 text-center text-[8px] text-slate-400">
+              Your application details will be sent to the LoanKarts team on WhatsApp.
               Loan approval is subject to lender eligibility and documentation.
             </p>
-
-          </div>
+          </form>
 
         </div>
 
@@ -1361,50 +1426,125 @@ export default function Home() {
       </section>
 
 
-      {/* ================= TESTIMONIALS ================= */}
+      {/* ================= GOOGLE REVIEWS ================= */}
 
-      <section className="bg-white py-16 sm:py-20">
-
+      <section className="bg-[#f5f8fb] py-16 sm:py-20">
         <div className="mx-auto max-w-[1240px] px-5 sm:px-6">
 
-          <SectionHeading
-            eyebrow="CUSTOMER STORIES"
-            title="Trusted by Customers"
-            text="Real service experiences from people who worked with the LoanKarts team."
-          />
-
-
-          <div className="mt-9 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-
-            {testimonials.map(([stars, role, text]) => (
-
-              <div
-                key={role + text}
-                className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
-              >
-
-                <div className="text-lg tracking-widest text-[#08b8d4]">
-                  {stars}
-                </div>
-
-                <p className="mt-4 text-[13px] leading-6 text-slate-600">
-                  “{text}”
-                </p>
-
-                <div className="mt-4 text-[11px] font-extrabold uppercase tracking-widest text-[#0a4963]">
-                  {role}
-                </div>
-
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-[700px]">
+              <div className="text-[9px] font-extrabold uppercase tracking-[.22em] text-[#08aeca]">
+                GOOGLE REVIEWS
               </div>
 
-            ))}
+              <h2 className="mt-2 text-4xl font-black tracking-tight text-[#082f42] sm:text-5xl">
+                What our customers say.
+              </h2>
 
+              <p className="mt-4 max-w-[650px] text-[13px] leading-6 text-slate-500">
+                See genuine customer feedback directly on Google. Read existing
+                reviews or share your own experience with LoanKarts.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+              <a
+                href="https://share.google/WByQDt6vKQiTZCYbh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-[10px] font-extrabold text-[#082f42] shadow-sm transition hover:-translate-y-0.5 hover:border-[#08b8d4] hover:shadow-md"
+              >
+                VIEW GOOGLE REVIEWS ↗
+              </a>
+
+              <a
+                href="https://share.google/WByQDt6vKQiTZCYbh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-[#08b8d4] px-5 text-[10px] font-extrabold text-white shadow-lg shadow-cyan-500/15 transition hover:-translate-y-0.5 hover:bg-[#079eb7]"
+              >
+                WRITE A REVIEW ★
+              </a>
+            </div>
           </div>
 
+          <div className="mt-9 grid gap-4 md:grid-cols-3">
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(8,47,66,.06)]">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-extrabold uppercase tracking-[.18em] text-slate-400">
+                  Google
+                </span>
+                <span className="rounded-full bg-[#e9f8fb] px-3 py-1 text-[9px] font-extrabold text-[#08aeca]">
+                  VERIFIED PLATFORM
+                </span>
+              </div>
+
+              <div className="mt-6 flex items-center gap-3">
+                <div className="text-3xl font-black text-[#082f42]">★★★★★</div>
+              </div>
+
+              <h3 className="mt-4 text-lg font-black text-[#082f42]">
+                Real customer feedback
+              </h3>
+
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                Reviews are kept on Google so customers can see the original
+                source and share their own genuine experience.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(8,47,66,.06)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e9f8fb] text-lg">
+                ★
+              </div>
+
+              <h3 className="mt-5 text-lg font-black text-[#082f42]">
+                Read existing reviews
+              </h3>
+
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                Open our Google listing and read customer experiences directly
+                from the source.
+              </p>
+
+              <a
+                href="https://share.google/WByQDt6vKQiTZCYbh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex text-[9px] font-extrabold text-[#08aeca] hover:text-[#079eb7]"
+              >
+                OPEN GOOGLE ↗
+              </a>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(8,47,66,.06)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff7e8] text-lg">
+                ✍
+              </div>
+
+              <h3 className="mt-5 text-lg font-black text-[#082f42]">
+                Share your experience
+              </h3>
+
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                Already worked with LoanKarts? You can leave an honest review
+                on Google in just a few clicks.
+              </p>
+
+              <a
+                href="https://share.google/WByQDt6vKQiTZCYbh"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex text-[9px] font-extrabold text-[#08aeca] hover:text-[#079eb7]"
+              >
+                WRITE ON GOOGLE ★
+              </a>
+            </div>
+
+          </div>
         </div>
-
       </section>
-
 
       {/* ================= BANKING PARTNERS ================= */}
 
@@ -1593,7 +1733,7 @@ export default function Home() {
                 </div>
 
                 <p className="mt-4 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#16c6dc]">
-                  JOIN AS A BROKER
+                  JOIN AS A CONNECTOR
                 </p>
 
                 <h3 className="mt-3 text-[20px] font-black leading-tight text-white">
@@ -1605,7 +1745,7 @@ export default function Home() {
                 <div className="mt-4 h-[2px] w-10 bg-[#16c6dc]" />
 
                 <p className="mt-3 text-[10px] leading-5 text-white/70">
-                  Are you a loan broker, DSA, agent,
+                  Are you a loan connector, DSA, agent,
                   <br />
                   financial professional or business
                   <br />
@@ -1613,7 +1753,7 @@ export default function Home() {
                 </p>
 
                 <span className="mt-4 rounded-lg bg-white px-5 py-2.5 text-[10px] font-extrabold text-[#082f42]">
-                  JOIN AS BROKER →
+                  JOIN AS CONNECTOR →
                 </span>
               </button>
 
@@ -1694,7 +1834,7 @@ function BrokerAuthModal({
     setLoading(true); setErrorMessage(""); setSuccessMessage("");
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/broker/reset-password`,
+        redirectTo: `${window.location.origin}/connector/reset-password`,
       });
       if (error) { setErrorMessage(error.message); return; }
       setSuccessMessage("Password reset link sent. Please check your email and follow the secure link.");
@@ -1895,14 +2035,14 @@ function BrokerAuthModal({
 
               <h2 className="text-[25px] font-black leading-tight text-[#082f42] sm:text-[28px]">
                 {mode === "login"
-                  ? "Broker Login"
-                  : "Become a Broker Partner"}
+                  ? "Connector Login"
+                  : "Become a Connector Partner"}
               </h2>
 
               <p className="mt-2 max-w-[430px] text-[13px] leading-5 text-slate-500">
                 {mode === "login"
                   ? "Sign in to access your LoanKarts partner dashboard."
-                  : "Create your broker account and join the LoanKarts partner network."}
+                  : "Create your connector account and join the LoanKarts partner network."}
               </p>
 
             </div>
@@ -2027,7 +2167,7 @@ function BrokerAuthModal({
 
               {forgotMode && mode === "login" && (
                 <div className="mt-4 rounded-2xl border border-cyan-100 bg-[#f4fbfd] p-4">
-                  <p className="text-[12px] font-extrabold text-[#082f42]">Reset your broker password</p>
+                  <p className="text-[12px] font-extrabold text-[#082f42]">Reset your connector password</p>
                   <p className="mt-1 text-[11px] leading-5 text-slate-500">Enter your registered email above. We’ll send you a secure password reset link.</p>
                   <button type="button" onClick={handleForgotPassword} disabled={loading} className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#073b4c] px-4 text-[12px] font-extrabold text-white transition hover:bg-[#0b5269] disabled:cursor-not-allowed disabled:opacity-60">
                     {loading ? "Sending Reset Link..." : "SEND RESET LINK →"}
@@ -2067,8 +2207,8 @@ function BrokerAuthModal({
                       ? "Signing in..."
                       : "Creating Account..."
                     : mode === "login"
-                    ? "LOGIN TO BROKER PANEL →"
-                    : "CREATE BROKER ACCOUNT →"}
+                    ? "LOGIN TO CONNECTOR PANEL →"
+                    : "CREATE CONNECTOR ACCOUNT →"}
                 </button>
               )}
 
@@ -2079,7 +2219,7 @@ function BrokerAuthModal({
 
                   {mode === "login" ? (
                   <>
-                    Don't have a broker account?{" "}
+                    Don't have a connector account?{" "}
 
                     <button
                       type="button"
@@ -2091,7 +2231,7 @@ function BrokerAuthModal({
                   </>
                 ) : (
                   <>
-                    Already have a broker account?{" "}
+                    Already have a connector account?{" "}
 
                     <button
                       type="button"

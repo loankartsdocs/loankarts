@@ -6,9 +6,8 @@ export const metadata: Metadata = {
   description:
     "LoanKarts provides professional loan assistance for personal, business, home, vehicle and other financial needs.",
   icons: {
-    icon: "/favicon.png?v=3",
-    shortcut: "/favicon.png?v=3",
-    apple: "/favicon.png?v=3",
+    icon: "/icon.svg?v=2",
+    shortcut: "/icon.svg?v=2",
   },
 };
 

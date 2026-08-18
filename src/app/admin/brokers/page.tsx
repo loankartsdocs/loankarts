@@ -7,6 +7,7 @@ type LoanFile = {
   id: string;
   broker_id: string | null;
   broker_name: string;
+  connector_code: string | null;
   customer_name: string;
   loan_type: string;
   status: string;
@@ -18,9 +19,17 @@ type LoanFile = {
   created_at?: string;
 };
 
+type ConnectorProfile = {
+  id: string;
+  connector_code: string | null;
+  full_name: string | null;
+  email: string | null;
+};
+
 type Broker = {
   id: string;
   name: string;
+  connectorCode: string;
   total: number;
   processing: number;
   approved: number;
@@ -33,6 +42,7 @@ type Broker = {
 
 export default function BrokerManagementPage() {
   const [files, setFiles] = useState<LoanFile[]>([]);
+  const [connectorProfiles, setConnectorProfiles] = useState<ConnectorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
@@ -48,13 +58,25 @@ export default function BrokerManagementPage() {
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
+      .from("connector_profiles")
+      .select("id, connector_code, full_name, email")
+      .order("full_name", { ascending: true });
+
+    if (profileError) {
+      console.error("connector_profiles error:", profileError);
+      setError(profileError.message);
+      setLoading(false);
+      return;
+    }
+
+    const { data: loanData, error: loanError } = await supabase
       .from("loan_files")
-      .select(
-        `
+      .select(`
         id,
         broker_id,
         broker_name,
+        connector_code,
         customer_name,
         loan_type,
         status,
@@ -63,31 +85,89 @@ export default function BrokerManagementPage() {
         commission_amount,
         document_paths,
         update_text
-        `
-      )
+      `)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(error);
-      setError(error.message);
+    if (loanError) {
+      console.error("loan_files error:", loanError);
+      setError(loanError.message);
       setLoading(false);
       return;
     }
 
-    setFiles((data || []) as LoanFile[]);
+    const profiles = (profileData || []) as ConnectorProfile[];
+    setConnectorProfiles(profiles);
+
+    const normalize = (value: unknown) =>
+      String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+    const enrichedFiles = (loanData || []).map((file) => {
+      const brokerId = normalize(file.broker_id);
+      const brokerName = normalize(file.broker_name);
+
+      const profile = profiles.find((p) => {
+        const profileId = normalize(p.id);
+        const profileName = normalize(p.full_name);
+        const profileEmail = normalize(p.email);
+
+        return (
+          (brokerId && profileId === brokerId) ||
+          (brokerName && profileName === brokerName) ||
+          (brokerName && profileEmail === brokerName)
+        );
+      });
+
+      return {
+        ...file,
+        connector_code: profile?.connector_code || file.connector_code || null,
+        broker_name: profile?.full_name || file.broker_name || "Connector Partner",
+      } as LoanFile;
+    });
+
+    setFiles(enrichedFiles);
     setLoading(false);
   }
 
   const brokers = useMemo<Broker[]>(() => {
     const map = new Map<string, Broker>();
 
-    files.forEach((file) => {
-      const id = file.broker_id || file.broker_name || "unknown";
+    connectorProfiles.forEach((profile) => {
+      const id = profile.id || profile.email || "unknown";
 
-      if (!map.has(id)) {
-        map.set(id, {
+      map.set(id, {
+        id,
+        name: displayBrokerName(profile.full_name || profile.email || "Connector Partner"),
+        connectorCode: profile.connector_code || "LKC-PENDING",
+        total: 0,
+        processing: 0,
+        approved: 0,
+        disbursed: 0,
+        rejected: 0,
+        amount: 0,
+        totalCommission: 0,
+        fileList: [],
+      });
+    });
+
+    files.forEach((file) => {
+      const brokerId = file.broker_id || "";
+      const brokerName = String(file.broker_name || "").trim().toLowerCase();
+
+      let broker = brokerId ? map.get(brokerId) : undefined;
+
+      if (!broker) {
+        broker = Array.from(map.values()).find(
+          (item) => item.name.trim().toLowerCase() === brokerName
+        );
+      }
+
+      if (!broker) {
+        const id = file.broker_id || file.broker_name || "unknown";
+
+        broker = {
           id,
           name: displayBrokerName(file.broker_name),
+          connectorCode: file.connector_code || "LKC-PENDING",
           total: 0,
           processing: 0,
           approved: 0,
@@ -96,39 +176,39 @@ export default function BrokerManagementPage() {
           amount: 0,
           totalCommission: 0,
           fileList: [],
-        });
+        };
+
+        map.set(id, broker);
       }
 
-      const broker = map.get(id)!;
+      if (file.connector_code) broker.connectorCode = file.connector_code;
 
       broker.fileList.push(file);
       broker.total += 1;
       broker.amount += Number(file.loan_amount || 0);
 
-      if (file.status === "Processing") {
-        broker.processing += 1;
-      }
-
-      if (file.status === "Approved") {
-        broker.approved += 1;
-      }
-
+      if (file.status === "Processing") broker.processing += 1;
+      if (file.status === "Approved") broker.approved += 1;
       if (file.status === "Disbursed") {
         broker.disbursed += 1;
         broker.totalCommission += Number(file.commission_amount || 0);
       }
-
-      if (file.status === "Rejected") {
-        broker.rejected += 1;
-      }
+      if (file.status === "Rejected") broker.rejected += 1;
     });
 
     return Array.from(map.values());
-  }, [files]);
+  }, [files, connectorProfiles]);
 
-  const filteredBrokers = brokers.filter((broker) =>
-    broker.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredBrokers = brokers.filter((broker) => {
+    const query = search.toLowerCase().trim();
+
+    if (!query) return true;
+
+    return (
+      broker.name.toLowerCase().includes(query) ||
+      broker.connectorCode.toLowerCase().includes(query)
+    );
+  });
 
   function money(value: number) {
     return new Intl.NumberFormat("en-IN", {
@@ -288,6 +368,7 @@ export default function BrokerManagementPage() {
         id,
         broker_id,
         broker_name,
+        connector_code,
         customer_name,
         loan_type,
         status,
@@ -502,7 +583,7 @@ export default function BrokerManagementPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search connector name, email or connector ID..."
+            placeholder="Search connector name or LKC code (e.g. LKC-0001)..."
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-[#10b7d3] focus:ring-2 focus:ring-cyan-100"
           />
         </div>
@@ -524,7 +605,7 @@ export default function BrokerManagementPage() {
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Connectors are shown from submitted loan files.
+              All registered connectors are shown, including connectors who have not submitted a loan file yet.
             </p>
           </div>
 
@@ -566,11 +647,11 @@ export default function BrokerManagementPage() {
                             {broker.name}
                           </p>
 
-                          <p className="mt-1 break-all text-[11px] text-slate-400">
-                            {broker.id === "unknown"
-                              ? "Connector ID unavailable"
-                              : broker.id}
-                          </p>
+                          <div className="mt-1 inline-flex items-center rounded-lg bg-cyan-50 px-2.5 py-1 ring-1 ring-cyan-100">
+                            <span className="text-[11px] font-black tracking-wide text-[#0799b5]">
+                              {broker.connectorCode}
+                            </span>
+                          </div>
                         </td>
 
                         <td className="px-2 py-4">
@@ -652,9 +733,11 @@ export default function BrokerManagementPage() {
                         {broker.name}
                       </p>
 
-                      <p className="mt-1 break-all text-xs text-slate-400">
-                        {broker.id}
-                      </p>
+                      <div className="mt-1 inline-flex items-center rounded-lg bg-cyan-50 px-2.5 py-1 ring-1 ring-cyan-100">
+                        <span className="text-xs font-black tracking-wide text-[#0799b5]">
+                          {broker.connectorCode}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -750,6 +833,11 @@ export default function BrokerManagementPage() {
                 <p className="text-xs text-slate-300 sm:text-sm">
                   Loan Files & Commission
                 </p>
+                <div className="mt-2 inline-flex items-center rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/20">
+                  <span className="text-xs font-black tracking-wider text-[#10b7d3]">
+                    {selectedBroker.connectorCode}
+                  </span>
+                </div>
               </div>
 
               <button
@@ -935,6 +1023,11 @@ export default function BrokerManagementPage() {
                 <p className="text-xs text-slate-300 sm:text-sm">
                   Connector Details
                 </p>
+                <div className="mt-2 inline-flex items-center rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/20">
+                  <span className="text-xs font-black tracking-wider text-[#10b7d3]">
+                    {detailsBroker.connectorCode}
+                  </span>
+                </div>
               </div>
 
               <button
