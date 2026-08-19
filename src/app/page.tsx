@@ -89,18 +89,18 @@ const bankLogoFiles: Record<string, string> = {
   "Axis Bank": "/axisbank_com.ico",
   "IDFC FIRST Bank": "/idfcfirstbank_com.ico",
   "IndusInd Bank": "/indusind.jpeg",
-  "Bandhan Bank": "/sbi_co_in.ico",
+  "Bandhan Bank": "/bandhanbank.png",
   "Kotak Mahindra Bank": "/kotak_com.png",
-  "Unity Small Finance Bank": "/sbi_co_in.ico",
-  "Shriram Finance": "/sbi_co_in.ico",
+  "Unity Small Finance Bank": "/unitybank.png",
+  "Shriram Finance": "/shriramfinance.png",
   "Yes Bank": "/yesbank.jpg",
   "PNB": "/pnbindia_in.ico",
-  "Bank of Maharashtra": "/sbi_co_in.ico",
+  "Bank of Maharashtra": "/bankofmaharashtra.png",
   "Federal Bank": "/federalbank_co_in.png",
   "Union Bank of India": "/unionbank.jpeg",
-  "SVC Bank": "/sbi_co_in.ico",
+  "SVC Bank": "/svc.png",
   "Bank of Baroda": "/bob.png",
-  "Central Bank of India": "/sbi_co_in.ico",
+  "Central Bank of India": "/centralbankofindia.png",
 };
 
 export default function Home() {
@@ -118,6 +118,11 @@ export default function Home() {
   const [applicationEmployment, setApplicationEmployment] = useState("");
   const [applicationDetails, setApplicationDetails] = useState("");
   const [applicationSending, setApplicationSending] = useState(false);
+
+  // ================= EMI CALCULATOR STATE =================
+  const [emiPrincipal, setEmiPrincipal] = useState(2500000);
+  const [emiRate, setEmiRate] = useState(10);
+  const [emiTenure, setEmiTenure] = useState(5);
 
   const submitLoanApplication = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -159,44 +164,36 @@ export default function Home() {
   };
 
   const calculateEMI = () => {
-    const principal = Number(
-      (document.getElementById("emi-principal") as HTMLInputElement)?.value || 0
-    );
+    // Values are controlled by React state, so the calculator updates instantly.
+    return true;
+  };
 
-    const annualRate = Number(
-      (document.getElementById("emi-rate") as HTMLInputElement)?.value || 0
-    );
+  const months = emiTenure * 12;
+  const monthlyRate = emiRate / 12 / 100;
+  const emi =
+    monthlyRate === 0
+      ? emiPrincipal / months
+      : (emiPrincipal *
+          monthlyRate *
+          Math.pow(1 + monthlyRate, months)) /
+        (Math.pow(1 + monthlyRate, months) - 1);
 
-    const years = Number(
-      (document.getElementById("emi-tenure") as HTMLInputElement)?.value || 0
-    );
+  const totalPayment = emi * months;
+  const totalInterest = Math.max(0, totalPayment - emiPrincipal);
+  const principalShare = totalPayment > 0 ? (emiPrincipal / totalPayment) * 100 : 0;
+  const interestShare = totalPayment > 0 ? (totalInterest / totalPayment) * 100 : 0;
 
-    if (!principal || !years) return;
+  const formatCurrency = (value: number) =>
+    `₹${Math.round(value).toLocaleString("en-IN")}`;
 
-    const months = years * 12;
-    const monthlyRate = annualRate / 12 / 100;
-
-    const emi =
-      monthlyRate === 0
-        ? principal / months
-        : (principal *
-            monthlyRate *
-            Math.pow(1 + monthlyRate, months)) /
-          (Math.pow(1 + monthlyRate, months) - 1);
-
-    const totalPayment = emi * months;
-    const totalInterest = totalPayment - principal;
-
-    const format = (value: number) =>
-      `₹${Math.round(value).toLocaleString("en-IN")}`;
-
-    const emiElement = document.getElementById("emi-result");
-    const totalElement = document.getElementById("emi-total");
-    const interestElement = document.getElementById("emi-interest");
-
-    if (emiElement) emiElement.textContent = format(emi);
-    if (totalElement) totalElement.textContent = format(totalPayment);
-    if (interestElement) interestElement.textContent = format(totalInterest);
+  const formatLakhCrore = (value: number) => {
+    if (value >= 10000000) {
+      return `₹${(value / 10000000).toFixed(2)} Cr`;
+    }
+    if (value >= 100000) {
+      return `₹${(value / 100000).toFixed(2)} L`;
+    }
+    return formatCurrency(value);
   };
 
   return (
@@ -307,6 +304,66 @@ export default function Home() {
 
         .lk-no-scrollbar {
           scrollbar-width: none;
+        }
+
+        /* PREMIUM EMI RANGE SLIDERS */
+        .lk-emi-range {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 100%;
+          height: 7px;
+          border-radius: 999px;
+          outline: none;
+          cursor: pointer;
+        }
+
+        .lk-emi-range::-webkit-slider-runnable-track {
+          height: 7px;
+          border-radius: 999px;
+          background: transparent;
+        }
+
+        .lk-emi-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 21px;
+          height: 21px;
+          margin-top: -7px;
+          border-radius: 999px;
+          border: 4px solid #ffffff;
+          background: #08b8d4;
+          box-shadow: 0 4px 14px rgba(8,184,212,.35), 0 0 0 1px rgba(8,47,66,.10);
+          transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+        .lk-emi-range:hover::-webkit-slider-thumb {
+          transform: scale(1.08);
+          box-shadow: 0 5px 18px rgba(8,184,212,.42), 0 0 0 1px rgba(8,47,66,.12);
+        }
+
+        .lk-emi-range:focus-visible::-webkit-slider-thumb {
+          box-shadow: 0 0 0 5px rgba(8,184,212,.16), 0 4px 14px rgba(8,184,212,.35);
+        }
+
+        .lk-emi-range::-moz-range-track {
+          height: 8px;
+          border-radius: 999px;
+          background: transparent;
+        }
+
+        .lk-emi-range::-moz-range-progress {
+          height: 8px;
+          border-radius: 999px;
+          background: #08b8d4;
+        }
+
+        .lk-emi-range::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          border: 4px solid #ffffff;
+          background: #08b8d4;
+          box-shadow: 0 4px 14px rgba(8,184,212,.35);
         }
       `}</style>
 
@@ -824,166 +881,253 @@ export default function Home() {
 
 
       {/* ================= EMI CALCULATOR ================= */}
-
       <section
         id="emi-calculator"
-        className="bg-[#f5f8fb] py-16 sm:py-20"
+        className="bg-[#f5f8fb] py-10 sm:py-12"
       >
-
         <div className="mx-auto max-w-[1180px] px-5 sm:px-6">
 
           <SectionHeading
             eyebrow="EMI CALCULATOR"
             title="Plan Your Monthly EMI"
-            text="Enter the loan amount, interest rate and tenure to estimate your monthly EMI."
+            text="Adjust the loan amount, interest rate and tenure to instantly estimate your repayment."
           />
 
+          <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_1.12fr]">
 
-          <div className="mt-9 grid gap-8 lg:grid-cols-[.9fr_1.1fr]">
+            {/* ================= PREMIUM INPUT PANEL ================= */}
+            <div className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_16px_38px_rgba(8,47,66,.09)] sm:p-6">
+              <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#08b8d4]/10 blur-3xl" />
+              <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-[#08b8d4]/5 blur-3xl" />
 
+              <div className="relative">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-extrabold uppercase tracking-[.22em] text-[#08aeca]">
+                      LOAN PLANNER
+                    </p>
+                    <h3 className="mt-1.5 text-[24px] font-black tracking-[-.5px] text-[#082f42] sm:text-[26px]">
+                      Set your loan details
+                    </h3>
+                  </div>
 
-            {/* INPUT BOX */}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#cceff4] bg-[#eefbfd] text-[20px] font-black text-[#08aeca] shadow-sm">
+                    ₹
+                  </div>
+                </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-
-              <div className="grid gap-4">
-
-
-                <label className="text-[10px] font-bold text-[#082f42]">
-
-                  Loan Amount
+                {/* LOAN AMOUNT */}
+                <div className="mt-5">
+                  <div className="flex items-end justify-between gap-4">
+                    <label className="text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
+                      Loan Amount
+                    </label>
+                    <div className="rounded-xl border border-[#dceef2] bg-[#f5fafb] px-3.5 py-1.5 text-[17px] font-black text-[#082f42] shadow-sm sm:text-[19px]">
+                      {formatCurrency(emiPrincipal)}
+                    </div>
+                  </div>
 
                   <input
-                    id="emi-principal"
-                    type="number"
-                    defaultValue={2500000}
-                    min={0}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[11px] outline-none focus:border-[#08b8d4]"
+                    aria-label="Loan Amount"
+                    type="range"
+                    min={100000}
+                    max={10000000}
+                    step={50000}
+                    value={emiPrincipal}
+                    onChange={(e) => setEmiPrincipal(Number(e.target.value))}
+                    className="lk-emi-range mt-4"
+                    style={{
+                      background: `linear-gradient(to right, #08b8d4 0%, #08b8d4 ${((emiPrincipal - 100000) / (10000000 - 100000)) * 100}%, #dbe5e8 ${((emiPrincipal - 100000) / (10000000 - 100000)) * 100}%, #dbe5e8 100%)`,
+                    }}
                   />
 
-                </label>
+                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
+                    <span>₹1 Lakh</span>
+                    <span>₹1 Crore</span>
+                  </div>
+                </div>
 
-
-                <label className="text-[10px] font-bold text-[#082f42]">
-
-                  Annual Interest Rate (%)
+                {/* INTEREST RATE */}
+                <div className="mt-5">
+                  <div className="flex items-end justify-between gap-4">
+                    <label className="text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
+                      Interest Rate
+                    </label>
+                    <div className="rounded-xl border border-[#dceef2] bg-[#f5fafb] px-3.5 py-1.5 text-[17px] font-black text-[#082f42] shadow-sm sm:text-[19px]">
+                      {emiRate.toFixed(1)}%
+                      <span className="ml-1 text-[11px] font-bold text-slate-400">p.a.</span>
+                    </div>
+                  </div>
 
                   <input
-                    id="emi-rate"
-                    type="number"
-                    defaultValue={10}
-                    min={0}
+                    aria-label="Annual Interest Rate"
+                    type="range"
+                    min={5}
+                    max={20}
                     step={0.1}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[11px] outline-none focus:border-[#08b8d4]"
+                    value={emiRate}
+                    onChange={(e) => setEmiRate(Number(e.target.value))}
+                    className="lk-emi-range mt-4"
+                    style={{
+                      background: `linear-gradient(to right, #08b8d4 0%, #08b8d4 ${((emiRate - 5) / 15) * 100}%, #dbe5e8 ${((emiRate - 5) / 15) * 100}%, #dbe5e8 100%)`,
+                    }}
                   />
 
-                </label>
+                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
+                    <span>5%</span>
+                    <span>20%</span>
+                  </div>
+                </div>
 
-
-                <label className="text-[10px] font-bold text-[#082f42]">
-
-                  Tenure (Years)
+                {/* TENURE */}
+                <div className="mt-5">
+                  <div className="flex items-end justify-between gap-4">
+                    <label className="text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
+                      Loan Tenure
+                    </label>
+                    <div className="rounded-xl border border-[#dceef2] bg-[#f5fafb] px-3.5 py-1.5 text-[17px] font-black text-[#082f42] shadow-sm sm:text-[19px]">
+                      {emiTenure}
+                      <span className="ml-1 text-[11px] font-bold text-slate-400">years</span>
+                    </div>
+                  </div>
 
                   <input
-                    id="emi-tenure"
-                    type="number"
-                    defaultValue={5}
+                    aria-label="Loan Tenure"
+                    type="range"
                     min={1}
                     max={30}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-[11px] outline-none focus:border-[#08b8d4]"
+                    step={1}
+                    value={emiTenure}
+                    onChange={(e) => setEmiTenure(Number(e.target.value))}
+                    className="lk-emi-range mt-4"
+                    style={{
+                      background: `linear-gradient(to right, #08b8d4 0%, #08b8d4 ${((emiTenure - 1) / 29) * 100}%, #dbe5e8 ${((emiTenure - 1) / 29) * 100}%, #dbe5e8 100%)`,
+                    }}
                   />
 
-                </label>
-
+                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
+                    <span>1 year</span>
+                    <span>30 years</span>
+                  </div>
+                </div>
 
                 <button
+                  type="button"
                   onClick={calculateEMI}
-                  className="mt-1 rounded-lg bg-[#08b8d4] py-3.5 text-[9px] font-extrabold text-white shadow-lg shadow-cyan-500/15 transition hover:bg-[#079eb7]"
+                  className="mt-5 flex h-11 w-full items-center justify-center rounded-xl bg-[#082f42] text-[13px] font-extrabold tracking-wide text-white shadow-[0_10px_24px_rgba(8,47,66,.18)] transition hover:-translate-y-0.5 hover:bg-[#063247] hover:shadow-[0_14px_28px_rgba(8,47,66,.22)]"
                 >
-                  CALCULATE EMI →
+                  CALCULATE EMI <span className="ml-2 text-[16px]">→</span>
                 </button>
 
+                <p className="mt-2.5 text-center text-[10px] font-medium text-slate-400">
+                  Drag the sliders to compare your repayment instantly.
+                </p>
               </div>
-
             </div>
 
+            {/* ================= PREMIUM RESULT PANEL ================= */}
+            <div className="relative overflow-hidden rounded-[22px] bg-[#082f42] p-5 text-white shadow-[0_18px_42px_rgba(8,47,66,.20)] sm:p-6">
+              <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#08b8d4]/15 blur-3xl" />
+              <div className="absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-[#08b8d4]/10 blur-3xl" />
 
-            {/* RESULT */}
-
-            <div className="rounded-2xl bg-[#082f42] p-6 text-white shadow-[0_16px_45px_rgba(8,47,66,.12)] sm:p-8">
-
-              <p className="text-[8px] font-bold uppercase tracking-[.22em] text-[#16c6dc]">
-                ESTIMATED REPAYMENT
-              </p>
-
-
-              <h3 className="mt-2 text-2xl font-black">
-                Your monthly EMI
-              </h3>
-
-
-              <div className="mt-7 rounded-xl bg-white/10 p-5">
-
-                <div className="text-[8px] uppercase tracking-wider text-white/45">
-                  Monthly EMI
+              <div className="relative flex h-full flex-col">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-[.22em] text-[#16c6dc]">
+                      ESTIMATED REPAYMENT
+                    </p>
+                    <h3 className="mt-1.5 text-[22px] font-black sm:text-[25px]">
+                      Your EMI summary
+                    </h3>
+                  </div>
+                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-bold text-white/60">
+                    {emiTenure} YEAR PLAN
+                  </div>
                 </div>
 
-                <div
-                  id="emi-result"
-                  className="mt-2 text-4xl font-black text-[#16c6dc]"
-                >
-                  ₹53,118
-                </div>
-
-              </div>
-
-
-              <div className="mt-3 grid grid-cols-2 gap-3">
-
-                <div className="rounded-xl bg-white/5 p-4">
-
-                  <div className="text-[8px] uppercase tracking-wider text-white/40">
-                    Total Payment
+                <div className="mt-5 grid items-center gap-4 sm:grid-cols-[1fr_140px]">
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/45">
+                      Monthly EMI
+                    </p>
+                    <div className="mt-1.5 text-[34px] font-black tracking-tight text-[#16c6dc] sm:text-[39px]">
+                      {formatCurrency(emi)}
+                    </div>
+                    <p className="mt-1 text-[10px] text-white/40">
+                      Approx. monthly repayment
+                    </p>
                   </div>
 
+                  {/* DONUT CHART */}
                   <div
-                    id="emi-total"
-                    className="mt-1.5 text-[15px] font-black"
+                    className="mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full shadow-[0_10px_30px_rgba(0,0,0,.16)]"
+                    style={{
+                      background: `conic-gradient(#16c6dc 0% ${principalShare}%, #35d2c5 ${principalShare}% ${principalShare + interestShare}%, rgba(255,255,255,.08) ${principalShare + interestShare}% 100%)`,
+                    }}
                   >
-                    ₹31,87,087
+                    <div className="flex h-[94px] w-[94px] flex-col items-center justify-center rounded-full bg-[#082f42] text-center shadow-inner">
+                      <span className="text-[8px] uppercase tracking-[.16em] text-white/40">
+                        Interest
+                      </span>
+                      <span className="mt-1 text-lg font-black text-white">
+                        {interestShare.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
-
                 </div>
 
-
-                <div className="rounded-xl bg-white/5 p-4">
-
-                  <div className="text-[8px] uppercase tracking-wider text-white/40">
-                    Total Interest
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/[.06] p-3.5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                        Principal
+                      </p>
+                      <p className="mt-1 text-[16px] font-black text-white">
+                        {formatLakhCrore(emiPrincipal)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                        Total Interest
+                      </p>
+                      <p className="mt-1 text-[16px] font-black text-[#35d2c5]">
+                        {formatLakhCrore(totalInterest)}
+                      </p>
+                    </div>
                   </div>
 
-                  <div
-                    id="emi-interest"
-                    className="mt-1.5 text-[15px] font-black"
-                  >
-                    ₹6,87,087
+                  <div className="mt-3 border-t border-white/10 pt-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                        Total Repayment
+                      </span>
+                      <span className="text-[18px] font-black text-white">
+                        {formatLakhCrore(totalPayment)}
+                      </span>
+                    </div>
                   </div>
-
                 </div>
 
+                <div className="mt-auto pt-4">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[9px] text-white/45">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-[#16c6dc]" />
+                      Principal {principalShare.toFixed(1)}%
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-[#35d2c5]" />
+                      Interest {interestShare.toFixed(1)}%
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[9px] leading-4 text-white/35">
+                    Indicative calculation only. Actual EMI, rate, fees and approval depend on lender terms and eligibility.
+                  </p>
+                </div>
               </div>
-
-
-              <p className="mt-5 text-[9px] leading-5 text-white/50">
-                This is an indicative calculation. Actual EMI, rate, fees and approval depend on the selected lender and your eligibility.
-              </p>
-
             </div>
 
           </div>
-
         </div>
-
       </section>
 
 
@@ -1101,67 +1245,59 @@ export default function Home() {
 
       <section
         id="apply"
-        className="bg-white py-16 sm:py-20"
+        className="bg-white pt-10 pb-8 sm:pt-12 sm:pb-10"
       >
 
-        <div className="mx-auto grid max-w-[1240px] gap-8 px-5 sm:px-6 lg:grid-cols-[.8fr_1.2fr]">
+        <div className="mx-auto grid max-w-[1240px] gap-7 px-5 sm:px-6 lg:grid-cols-[.82fr_1.18fr] lg:items-start">
 
-
-          <div>
+          <div className="pt-2">
 
             <SectionEyebrow>
               GET STARTED
             </SectionEyebrow>
 
-
-            <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
-              Apply in a few minutes.
+            <h2 className="mt-3 max-w-[560px] text-[38px] font-black leading-[1.02] tracking-[-1.5px] text-[#082f42] sm:text-[50px]">
+              Apply in a few
+              <span className="block text-[#08aeca]">minutes.</span>
             </h2>
 
-
-            <p className="mt-5 max-w-lg text-[13px] leading-6 text-slate-500">
+            <p className="mt-5 max-w-[500px] text-[15px] leading-7 text-slate-500">
               Share your basic requirement. Our team can contact you to understand the profile and next steps.
             </p>
 
-
-            <div className="mt-6 space-y-2 text-[10px] font-semibold text-slate-500">
-
+            <div className="mt-6 space-y-3 text-[13px] font-semibold text-slate-500">
               <div>✓ No commitment for an initial discussion</div>
-
               <div>✓ Free basic eligibility discussion</div>
-
               <div>✓ Multiple financial channels</div>
-
               <div>✓ Human assistance</div>
-
             </div>
 
           </div>
 
-
           <form
             onSubmit={submitLoanApplication}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(8,47,66,.10)] sm:p-7"
+            className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(8,47,66,.10)] sm:p-5"
           >
-            <div className="rounded-xl bg-[#082f42] p-5 text-white">
-              <p className="text-[8px] font-bold uppercase tracking-[.22em] text-[#16c6dc]">
+
+            <div className="rounded-[18px] bg-[#082f42] px-6 py-5 text-white shadow-[0_10px_25px_rgba(8,47,66,.12)]">
+              <p className="text-[10px] font-bold uppercase tracking-[.22em] text-[#16c6dc]">
                 QUICK APPLICATION
               </p>
-              <h3 className="mt-1.5 text-xl font-black">
+              <h3 className="mt-1.5 text-[25px] font-black tracking-[-.4px]">
                 Tell us what you need
               </h3>
-              <p className="mt-1 text-[9px] text-white/55">
+              <p className="mt-1.5 text-[12px] text-white/65">
                 Basic details are enough to get started.
               </p>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
               <input
                 required
                 value={applicationName}
                 onChange={(e) => setApplicationName(e.target.value)}
                 placeholder="Full Name *"
-                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+                className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-[14px] text-[#082f42] outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
               />
 
               <input
@@ -1174,7 +1310,7 @@ export default function Home() {
                 type="tel"
                 inputMode="numeric"
                 maxLength={10}
-                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+                className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-[14px] text-[#082f42] outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
               />
 
               <input
@@ -1182,14 +1318,14 @@ export default function Home() {
                 onChange={(e) => setApplicationEmail(e.target.value)}
                 placeholder="Email Address"
                 type="email"
-                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+                className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-[14px] text-[#082f42] outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
               />
 
               <select
                 required
                 value={applicationLoanType}
                 onChange={(e) => setApplicationLoanType(e.target.value)}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+                className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-[14px] text-[#082f42] outline-none transition focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
               >
                 <option value="">Select Loan Type *</option>
                 {loans.map(([, title]) => (
@@ -1204,14 +1340,14 @@ export default function Home() {
                 value={applicationAmount}
                 onChange={(e) => setApplicationAmount(e.target.value)}
                 placeholder="Loan Amount Required *"
-                className="rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+                className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-[14px] text-[#082f42] outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
               />
 
               <select
                 required
                 value={applicationEmployment}
                 onChange={(e) => setApplicationEmployment(e.target.value)}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+                className="h-12 rounded-xl border border-slate-300 bg-white px-4 text-[14px] text-[#082f42] outline-none transition focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
               >
                 <option value="">Employment Type *</option>
                 <option value="Salaried">Salaried</option>
@@ -1226,21 +1362,22 @@ export default function Home() {
               onChange={(e) => setApplicationDetails(e.target.value)}
               placeholder="Additional details (optional)"
               rows={3}
-              className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-3 text-[10px] outline-none focus:border-[#08b8d4]"
+              className="mt-3 min-h-[92px] w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-[14px] text-[#082f42] outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
             />
 
             <button
               type="submit"
               disabled={applicationSending}
-              className="mt-3 w-full rounded-lg bg-[#08b8d4] py-3.5 text-[9px] font-extrabold text-white transition hover:bg-[#079eb7] disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-3 h-12 w-full rounded-xl bg-[#08b8d4] px-5 text-[14px] font-extrabold text-white shadow-[0_10px_24px_rgba(8,184,212,.18)] transition hover:-translate-y-0.5 hover:bg-[#079eb7] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {applicationSending ? "OPENING WHATSAPP..." : "SUBMIT APPLICATION →"}
             </button>
 
-            <p className="mt-2 text-center text-[8px] text-slate-400">
+            <p className="mt-2.5 px-2 text-center text-[10px] leading-4 text-slate-400">
               Your application details will be sent to the LoanKarts team on WhatsApp.
               Loan approval is subject to lender eligibility and documentation.
             </p>
+
           </form>
 
         </div>
@@ -1248,106 +1385,89 @@ export default function Home() {
       </section>
 
 
-
       {/* ================= ABOUT ================= */}
-
       <section
         id="about"
-        className="bg-white py-16 sm:py-20"
+        className="bg-white pt-8 pb-14 sm:pt-10 sm:pb-16"
       >
+        <div className="mx-auto max-w-[1180px] px-5 sm:px-6">
 
-        <div className="mx-auto grid max-w-[1180px] gap-10 px-5 sm:px-6 lg:grid-cols-[.72fr_1.28fr]">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
 
-          <div>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#08aeca]">
+                ABOUT LOANKARTS
+              </p>
 
-            <SectionEyebrow>
-              WHY LOANKARTS
-            </SectionEyebrow>
+              <h2 className="mt-3 max-w-[500px] text-[32px] font-black leading-[1.08] tracking-[-1px] text-[#082f42] sm:text-[40px]">
+                Simple guidance.
+                <span className="block text-[#08aeca]">
+                  Better loan decisions.
+                </span>
+              </h2>
 
+              <p className="mt-5 max-w-[500px] text-[13px] leading-6 text-slate-500 sm:text-[14px] sm:leading-7">
+                We help customers understand their loan requirements, organise documentation and connect with suitable financial channels through a simple, structured process.
+              </p>
 
-            <h2 className="mt-3 text-4xl font-black leading-tight sm:text-5xl">
-              Your funding advantage.
-            </h2>
-
-
-            <p className="mt-5 text-[14px] leading-7 text-slate-500">
-              We combine loan assistance, documentation guidance and multi-channel lender access to make the process easier to understand.
-            </p>
-
-
-            <div className="mt-6 flex gap-7">
-
-              <div>
-                <div className="text-3xl font-black text-[#08aeca]">
-                  6K+
+              <div className="mt-6 flex items-center gap-8">
+                <div>
+                  <div className="text-[27px] font-black text-[#08aeca]">6K+</div>
+                  <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                    Customers
+                  </div>
                 </div>
 
-                <div className="mt-1 text-[9px] text-slate-500">
-                  Customers
-                </div>
-              </div>
+                <div className="h-10 w-px bg-slate-200" />
 
-
-              <div>
-                <div className="text-3xl font-black text-[#08aeca]">
-                  100+
-                </div>
-
-                <div className="mt-1 text-[9px] text-slate-500">
-                  Channels
+                <div>
+                  <div className="text-[27px] font-black text-[#08aeca]">100+</div>
+                  <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                    Channels
+                  </div>
                 </div>
               </div>
 
+              <button
+                onClick={() => setBrokerModal(true)}
+                className="group mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-[#082f42] px-6 text-[11px] font-extrabold text-white shadow-[0_8px_20px_rgba(8,47,66,.12)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#08aeca]"
+              >
+                WORK WITH US
+                <span className="ml-2 text-[15px] transition-transform duration-200 group-hover:translate-x-1">
+                  →
+                </span>
+              </button>
             </div>
 
-
-            <button
-              onClick={() => setBrokerModal(true)}
-              className="mt-6 rounded-lg bg-[#082f42] px-6 py-3 text-[9px] font-extrabold text-white hover:bg-[#08b8d4]"
-            >
-              WORK WITH US →
-            </button>
-
-          </div>
-
-
-          <div className="space-y-2.5">
-
-            {advantages.map(([n, title, text]) => (
-
-              <div
-                key={n}
-                className="rounded-xl border border-slate-200 px-5 py-4 transition hover:border-[#a9e4eb] hover:bg-[#fbfeff]"
-              >
-
-                <div className="flex gap-4">
-
-                  <span className="text-[11px] font-black text-[#08b8d4]">
+            <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+              {advantages.map(([n, title, text]) => (
+                <div
+                  key={n}
+                  className="group flex items-start gap-4 px-5 py-4 transition-colors duration-200 hover:bg-[#f8fdfe] sm:px-6 sm:py-5"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#effbfd] text-[10px] font-black text-[#08aeca] ring-1 ring-[#d5eef2] transition-all duration-200 group-hover:bg-[#08b8d4] group-hover:text-white">
                     {n}
-                  </span>
+                  </div>
 
-                  <div>
-
-                    <h3 className="text-[13px] font-black">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-[13px] font-black leading-5 text-[#082f42] sm:text-[14px]">
                       {title}
                     </h3>
 
-                    <p className="mt-1.5 text-[12px] leading-6 text-slate-500">
+                    <p className="mt-1 text-[10px] leading-5 text-slate-500 sm:text-[11px]">
                       {text}
                     </p>
-
                   </div>
 
+                  <span className="mt-1 hidden text-[#08aeca] opacity-0 transition-all duration-200 group-hover:block group-hover:translate-x-1 group-hover:opacity-100">
+                    →
+                  </span>
                 </div>
-
-              </div>
-
-            ))}
+              ))}
+            </div>
 
           </div>
-
         </div>
-
       </section>
 
 
@@ -1574,9 +1694,9 @@ export default function Home() {
                 {[...banks, ...banks].map(([name, domain], index) => (
                   <div
                     key={`${name}-${index}`}
-                    className="flex h-[54px] shrink-0 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#08b8d4]/50 hover:shadow-md"
+                    className="flex h-[54px] shrink-0 items-center gap-2.5 px-4 transition hover:-translate-y-0.5"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50">
+                    <div className="flex h-8 w-8 items-center justify-center">
                       <img
                         src={bankLogoFiles[name] || "/sbi_co_in.ico"}
                         alt={`${name} logo`}

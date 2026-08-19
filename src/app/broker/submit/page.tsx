@@ -119,10 +119,10 @@ export default function SubmitNewFilePage() {
       return;
     }
 
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = 50 * 1024 * 1024;
 
     if (file.size > maxSize) {
-      alert("Maximum file size is 10 MB.");
+      alert("Maximum file size is 50 MB.");
       e.target.value = "";
       return;
     }
@@ -469,7 +469,7 @@ export default function SubmitNewFilePage() {
             </h3>
 
             <p className="mt-1 text-[11px] leading-4 text-slate-500">
-              PDF, JPG, JPEG or PNG • Max 10 MB
+              PDF, JPG, JPEG or PNG • Max 50 MB
             </p>
           </div>
 

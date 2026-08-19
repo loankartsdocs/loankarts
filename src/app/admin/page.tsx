@@ -437,13 +437,17 @@ export default function AdminPage() {
 
           {/* BRAND */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <div className="flex h-10 w-[150px] shrink-0 items-center justify-start px-0 sm:h-11 sm:w-[175px]">
+            <a
+              href="/admin"
+              aria-label="LoanKarts Admin Dashboard"
+              className="flex h-10 w-[150px] shrink-0 items-center justify-start px-0 sm:h-11 sm:w-[175px]"
+            >
               <img
                 src="/loankarts-logo-white.png"
                 alt="LoanKarts"
                 className="h-6 w-auto max-w-full object-contain sm:h-7"
               />
-            </div>
+            </a>
 
             <div className="hidden min-w-0 border-l border-white/15 pl-4 sm:block">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#10b7d3]">

@@ -328,7 +328,7 @@ export default function BrokerDashboard() {
       {/* HEADER */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050b20]/95 text-white shadow-xl backdrop-blur">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
-          <a href="/" className="flex items-center gap-4">
+          <a href="/broker" className="flex items-center gap-4">
             <div className="flex h-12 w-[150px] items-center">
               <img
                 src="/logo-white.png"

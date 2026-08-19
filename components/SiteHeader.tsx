@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import BrokerAuthModal from "./BrokerAuthModal";
 
 export default function SiteHeader() {
+  const pathname = usePathname();
+
   const [mobileMenu, setMobileMenu] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
@@ -11,6 +14,19 @@ export default function SiteHeader() {
   const [brokerMode, setBrokerMode] = useState<"login" | "register">(
     "login"
   );
+
+  // =====================================================
+  // LOGO DESTINATION
+  // =====================================================
+
+  const logoHref =
+    pathname === "/admin" || pathname.startsWith("/admin/")
+      ? "/admin"
+      : pathname === "/broker" || pathname.startsWith("/broker/")
+      ? "/broker"
+      : pathname === "/loans" || pathname.startsWith("/loans/")
+      ? "/#loans"
+      : "/";
 
   // Listen for JOIN AS BROKER clicks from the footer.
   useEffect(() => {
@@ -122,7 +138,7 @@ export default function SiteHeader() {
           {/* LOGO */}
 
           <a
-            href="/"
+            href={logoHref}
             aria-label="LoanKarts"
             className="flex h-[40px] w-[160px] shrink-0 items-center overflow-hidden"
             style={{ width: "160px", height: "40px" }}
