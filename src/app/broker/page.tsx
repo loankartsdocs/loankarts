@@ -14,6 +14,7 @@ type DocumentPaths = Record<string, string | null> | null;
 
 type DatabaseFile = {
   id: string;
+  file_code: string;
   customer_name: string;
   mobile: string;
   email: string | null;
@@ -141,6 +142,7 @@ export default function BrokerDashboard() {
         .select(
           `
           id,
+          file_code,
           customer_name,
           mobile,
           email,
@@ -289,21 +291,65 @@ export default function BrokerDashboard() {
     setOpeningDocument(documentName);
 
     try {
+      let objectPath = String(path).trim();
+
+      if (!objectPath) {
+        throw new Error("Document path is empty.");
+      }
+
+      // Handle documents saved as a complete Supabase Storage URL.
+      if (/^https?:\/\//i.test(objectPath)) {
+        const url = new URL(objectPath);
+        const pathname = decodeURIComponent(url.pathname);
+        const bucketMarker = "/loan-documents/";
+        const bucketIndex = pathname.indexOf(bucketMarker);
+
+        if (bucketIndex !== -1) {
+          objectPath = pathname.slice(
+            bucketIndex + bucketMarker.length
+          );
+        } else {
+          throw new Error("Invalid Supabase document URL.");
+        }
+      }
+
+      // Storage expects the object path without the bucket name.
+      objectPath = objectPath
+        .replace(/^\/+/, "")
+        .replace(/^loan-documents\/+/, "");
+
+      try {
+        objectPath = decodeURIComponent(objectPath);
+      } catch {
+        // Keep the path as-is if it is not URL encoded.
+      }
+
+      objectPath = objectPath.trim();
+
+      if (!objectPath) {
+        throw new Error("Invalid document path.");
+      }
+
       const { data, error } = await supabase.storage
         .from("loan-documents")
-        .createSignedUrl(path, 3600);
+        .createSignedUrl(objectPath, 3600);
 
       if (error) {
+        console.error("Supabase Storage error:", error);
         throw new Error(error.message);
       }
 
       if (!data?.signedUrl) {
-        throw new Error("Unable to create document link.");
+        throw new Error("Unable to create secure document link.");
       }
 
-      window.open(data.signedUrl, "_blank");
+      window.open(
+        data.signedUrl,
+        "_blank",
+        "noopener,noreferrer"
+      );
     } catch (error) {
-      console.error(error);
+      console.error("Unable to open document:", error);
 
       alert(
         error instanceof Error
@@ -328,7 +374,7 @@ export default function BrokerDashboard() {
       {/* HEADER */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050b20]/95 text-white shadow-xl backdrop-blur">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
-          <a href="/broker" className="flex items-center gap-4">
+          <a href="/" className="flex items-center gap-4">
             <div className="flex h-12 w-[150px] items-center">
               <img
                 src="/logo-white.png"
@@ -536,7 +582,7 @@ export default function BrokerDashboard() {
                     >
                       <td className="px-5 py-4">
                         <span className="text-[12px] font-extrabold text-[#073b4c]">
-                          {file.id}
+                          {file.file_code}
                         </span>
                       </td>
 
@@ -715,7 +761,7 @@ export default function BrokerDashboard() {
                 </h3>
 
                 <p className="mt-1 truncate text-xs text-white/55 sm:text-sm">
-                  File ID: {selectedFile.id}
+                  File ID: {selectedFile.file_code}
                 </p>
               </div>
 

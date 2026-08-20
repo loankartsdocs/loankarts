@@ -72,6 +72,8 @@ export default function SubmitNewFilePage() {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [submittedFileId, setSubmittedFileId] = useState("");
+  const [connectorId, setConnectorId] = useState("");
 
   const selectedLoan = useMemo(
     () =>
@@ -198,6 +200,30 @@ export default function SubmitNewFilePage() {
         window.location.href = "/broker/login";
         return;
       }
+
+      const { data: connectorProfile, error: connectorProfileError } =
+        await supabase
+          .from("connector_profiles")
+          .select("connector_code")
+          .eq("id", user.id)
+          .maybeSingle();
+
+      if (connectorProfileError) {
+        throw new Error(
+          `Unable to fetch Connector ID: ${connectorProfileError.message}`
+        );
+      }
+
+      const currentConnectorCode =
+        connectorProfile?.connector_code?.trim() || "";
+
+      if (!currentConnectorCode) {
+        throw new Error(
+          "Your Connector ID could not be found. Please contact LoanKarts support."
+        );
+      }
+
+      setConnectorId(currentConnectorCode);
 
       const customerName = form.customerName.trim();
       const city = form.city.trim();
@@ -374,7 +400,10 @@ export default function SubmitNewFilePage() {
         );
       }
 
-      const { error: databaseError } = await supabase
+      const {
+        data: createdLoanFile,
+        error: databaseError,
+      } = await supabase
         .from("loan_files")
         .insert({
           customer_name: customerName,
@@ -393,15 +422,28 @@ export default function SubmitNewFilePage() {
           broker_name:
             String(user.user_metadata?.full_name || user.email || "Connector Partner").trim(),
           broker_id: user.id,
+          connector_code: currentConnectorCode,
           document_paths: documentPaths,
-        });
+        })
+        .select("file_code")
+        .single();
 
       if (databaseError) {
         throw new Error(`Database error: ${databaseError.message}`);
       }
 
+      const dashboardFileId =
+        createdLoanFile?.file_code?.trim() || "";
+
+      if (!dashboardFileId) {
+        throw new Error(
+          "The loan file was created, but its File ID could not be generated."
+        );
+      }
+
+      setSubmittedFileId(dashboardFileId);
       setSuccessMessage(
-        `Loan file ${fileId} submitted successfully.`
+        `Loan file ${dashboardFileId} submitted successfully.`
       );
 
       setForm({
@@ -896,6 +938,141 @@ export default function SubmitNewFilePage() {
               title="Other Document"
               documentName="other"
             />
+          </div>
+        </section>
+
+        {/* ADDITIONAL DOCUMENTS */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,53,68,0.055)] sm:p-7">
+          <div className="mb-5">
+            <div className="mb-2 h-1 w-10 rounded-full bg-[#10b7d3]" />
+            <h3 className="text-base font-black tracking-tight text-[#073b4c] sm:text-lg">
+              4. Send Additional Documents
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+              If any additional document is required after submission, send it to LoanKarts by email or WhatsApp.
+              Please mention your File ID and Connector ID with every document.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-xl shadow-sm ring-1 ring-slate-200">
+                  ✉
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-base font-black text-[#073b4c]">
+                    Send by Email
+                  </h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Attach the additional document and mention the File ID and Connector ID in the email.
+                  </p>
+                  <p className="mt-3 text-xs font-semibold text-slate-600">
+                    File ID:{" "}
+                    <span className="font-black text-[#073b4c]">
+                      {submittedFileId || "Available after submission"}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    Connector ID:{" "}
+                    <span className="break-all font-black text-[#073b4c]">
+                      {connectorId || "Available after submission"}
+                    </span>
+                  </p>
+
+                  <a
+                    href={
+                      submittedFileId
+                        ? `mailto:docs@loankarts.com?subject=Additional%20Document%20-%20${encodeURIComponent(submittedFileId)}&body=${encodeURIComponent(
+                            `Hello LoanKarts Team,
+
+I am sending an additional document for my loan file.
+
+File ID: ${submittedFileId}
+
+Connector ID: ${connectorId || "Available after submission"}
+
+Please find the document attached.
+
+Regards`
+                          )}`
+                        : "#"
+                    }
+                    onClick={(e) => {
+                      if (!submittedFileId) {
+                        e.preventDefault();
+                        alert("Please submit the loan file first. Your File ID will then be available here.");
+                      }
+                    }}
+                    className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#073b4c] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#062f3e]"
+                  >
+                    Email Additional Document →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-xl shadow-sm ring-1 ring-emerald-200">
+                  WA
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-base font-black text-[#073b4c]">
+                    Send by WhatsApp
+                  </h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Send the additional document through WhatsApp and include your File ID and Connector ID.
+                  </p>
+                  <p className="mt-3 text-xs font-semibold text-slate-600">
+                    File ID:{" "}
+                    <span className="font-black text-[#073b4c]">
+                      {submittedFileId || "Available after submission"}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    Connector ID:{" "}
+                    <span className="font-black text-[#073b4c]">
+                      {connectorId || "Available after submission"}
+                    </span>
+                  </p>
+
+                  <a
+                    href={
+                      submittedFileId
+                        ? `https://web.whatsapp.com/send?text=${encodeURIComponent(
+                            `Hello LoanKarts Team,
+
+I am sending an additional document for my loan file.
+
+File ID: ${submittedFileId}
+
+Connector ID: ${connectorId || "Available after submission"}
+
+Please find the document attached.`
+                          )}`
+                        : "#"
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (!submittedFileId) {
+                        e.preventDefault();
+                        alert("Please submit the loan file first. Your File ID will then be available here.");
+                      }
+                    }}
+                    className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#16a34a] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#15803d]"
+                  >
+                    WhatsApp Additional Document →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-cyan-100 bg-cyan-50 p-4 text-xs leading-5 text-[#07556a]">
+            <strong>Important:</strong> Always mention the correct File ID and Connector ID when sending additional documents.
+            This helps the LoanKarts team attach the document to the correct loan file.
           </div>
         </section>
 

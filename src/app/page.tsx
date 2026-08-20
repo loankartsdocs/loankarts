@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 
@@ -118,13 +118,15 @@ export default function Home() {
   const [applicationEmployment, setApplicationEmployment] = useState("");
   const [applicationDetails, setApplicationDetails] = useState("");
   const [applicationSending, setApplicationSending] = useState(false);
+  const [applicationSubmitted, setApplicationSubmitted] = useState(false);
+  const applicationResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ================= EMI CALCULATOR STATE =================
   const [emiPrincipal, setEmiPrincipal] = useState(2500000);
   const [emiRate, setEmiRate] = useState(10);
   const [emiTenure, setEmiTenure] = useState(5);
 
-  const submitLoanApplication = (event: FormEvent<HTMLFormElement>) => {
+  const submitLoanApplication = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const mobile = applicationMobile.replace(/\D/g, "");
@@ -142,26 +144,68 @@ export default function Home() {
 
     setApplicationSending(true);
 
-    const message = [
-      "🏦 *NEW LOAN APPLICATION - LOANKARTS*",
-      "",
-      `👤 *Name:* ${applicationName.trim()}`,
-      `📱 *Mobile:* ${mobile}`,
-      `📧 *Email:* ${applicationEmail.trim() || "Not provided"}`,
-      `🏦 *Loan Type:* ${applicationLoanType}`,
-      `💰 *Loan Amount:* ${applicationAmount.trim()}`,
-      `💼 *Employment Type:* ${applicationEmployment}`,
-      `📝 *Additional Details:* ${applicationDetails.trim() || "Not provided"}`,
-      "",
-      "Please contact this customer regarding the loan requirement.",
-    ].join("\n");
+    try {
+      const numericLoanAmount = Number(
+        applicationAmount.replace(/[^0-9.]/g, "")
+      );
 
-    const whatsappUrl =
-      `https://wa.me/919990954351?text=${encodeURIComponent(message)}`;
+      if (!Number.isFinite(numericLoanAmount) || numericLoanAmount <= 0) {
+        alert("Please enter a valid loan amount.");
+        setApplicationSending(false);
+        return;
+      }
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    setApplicationSending(false);
+      const { error } = await supabase
+        .from("customer_applications")
+        .insert({
+          customer_name: applicationName.trim(),
+          mobile,
+          email: applicationEmail.trim() || null,
+          loan_type: applicationLoanType,
+          loan_amount: numericLoanAmount,
+          employment: applicationEmployment,
+          remarks: applicationDetails.trim() || null,
+          status: "New",
+        });
+
+      if (error) {
+        console.error("Loan application submit error:", error);
+        alert("Unable to submit your application. Please try again.");
+        return;
+      }
+
+      setApplicationSubmitted(true);
+
+      if (applicationResetTimer.current) {
+        clearTimeout(applicationResetTimer.current);
+      }
+
+      applicationResetTimer.current = setTimeout(() => {
+        setApplicationSubmitted(false);
+        setApplicationName("");
+        setApplicationMobile("");
+        setApplicationEmail("");
+        setApplicationLoanType("");
+        setApplicationAmount("");
+        setApplicationEmployment("");
+        setApplicationDetails("");
+        applicationResetTimer.current = null;
+      }, 5000);
+    } catch (error) {
+      console.error("Loan application submit error:", error);
+      alert("Something went wrong while submitting your application. Please try again.");
+    } finally {
+      setApplicationSending(false);
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      if (applicationResetTimer.current) {
+        clearTimeout(applicationResetTimer.current);
+      }
+    };
+  }, []);
 
   const calculateEMI = () => {
     // Values are controlled by React state, so the calculator updates instantly.
@@ -1274,6 +1318,53 @@ export default function Home() {
 
           </div>
 
+          {applicationSubmitted ? (
+            <div className="rounded-[24px] border border-emerald-200 bg-white p-6 shadow-[0_18px_50px_rgba(8,47,66,.10)] sm:p-8">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-3xl text-emerald-600 shadow-sm">
+                ✓
+              </div>
+
+              <div className="mt-5 text-center">
+                <p className="text-[10px] font-extrabold uppercase tracking-[.22em] text-emerald-600">
+                  APPLICATION RECEIVED
+                </p>
+                <h3 className="mt-2 text-[28px] font-black tracking-[-.6px] text-[#082f42]">
+                  Application Submitted Successfully!
+                </h3>
+                <p className="mx-auto mt-3 max-w-[520px] text-[13px] leading-6 text-slate-500">
+                  Thank you, {applicationName.trim()}. Your loan request has been received by LoanKarts. Our team will contact you shortly.
+                </p>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-[#f7fafc] p-5">
+                <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#08aeca]">
+                  APPLICATION DETAILS
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Loan Type</p>
+                    <p className="mt-1 text-sm font-black text-[#082f42]">{applicationLoanType}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Loan Amount</p>
+                    <p className="mt-1 text-sm font-black text-[#082f42]">{applicationAmount}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Mobile</p>
+                    <p className="mt-1 text-sm font-black text-[#082f42]">{applicationMobile}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Employment</p>
+                    <p className="mt-1 text-sm font-black text-[#082f42]">{applicationEmployment}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-center text-[12px] font-bold text-emerald-700">
+                ✓ Your details have been securely saved.
+              </div>
+            </div>
+          ) : (
           <form
             onSubmit={submitLoanApplication}
             className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(8,47,66,.10)] sm:p-5"
@@ -1370,15 +1461,16 @@ export default function Home() {
               disabled={applicationSending}
               className="mt-3 h-12 w-full rounded-xl bg-[#08b8d4] px-5 text-[14px] font-extrabold text-white shadow-[0_10px_24px_rgba(8,184,212,.18)] transition hover:-translate-y-0.5 hover:bg-[#079eb7] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {applicationSending ? "OPENING WHATSAPP..." : "SUBMIT APPLICATION →"}
+              {applicationSending ? "SUBMITTING APPLICATION..." : "SUBMIT APPLICATION →"}
             </button>
 
             <p className="mt-2.5 px-2 text-center text-[10px] leading-4 text-slate-400">
-              Your application details will be sent to the LoanKarts team on WhatsApp.
+              Your application details are securely saved with LoanKarts.
               Loan approval is subject to lender eligibility and documentation.
             </p>
 
           </form>
+          )}
 
         </div>
 
@@ -1933,6 +2025,8 @@ function BrokerAuthModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -2281,7 +2375,36 @@ function BrokerAuthModal({
                   )}
                 </div>
                 {!forgotMode && (
-                  <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 6 characters" autoComplete={mode === "login" ? "current-password" : "new-password"} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50" />
+                  <div className="relative mt-1.5">
+                    <input
+                      required
+                      type={showPassword ? "text" : "password"}
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Minimum 6 characters"
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      className="h-11 w-full rounded-xl border border-slate-300 px-3.5 pr-12 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#08aeca] focus:outline-none"
+                    >
+                      {showPassword ? (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                          <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                          <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.8A10.8 10.8 0 0 1 12 4.6c5.2 0 8.8 4.2 9.8 6.4a10.7 10.7 0 0 1-2.5 3.5M6.2 6.2C3.9 7.7 2.5 10 2.2 11c.5 1.1 2.1 4.1 5.9 5.6M14.1 19.1c-.7.2-1.4.3-2.1.3-5.2 0-8.8-4.2-9.8-6.4.3-.7 1.1-2 2.4-3.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                          <path d="M2.2 12s3.3-6.4 9.8-6.4S21.8 12 21.8 12s-3.3 6.4-9.8 6.4S2.2 12 2.2 12Z" stroke="currentColor" strokeWidth="1.8"/>
+                          <circle cx="12" cy="12" r="2.7" stroke="currentColor" strokeWidth="1.8"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 )}
               </label>
 
@@ -2301,16 +2424,36 @@ function BrokerAuthModal({
                 <label className="mt-3.5 block text-[13px] font-bold text-[#082f42]">
                   Confirm Password
 
-                  <input
-                    required
-                    type="password"
-                    minLength={6}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter your password"
-                    autoComplete="new-password"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3.5 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
-                  />
+                  <div className="relative mt-1.5">
+                    <input
+                      required
+                      type={showConfirmPassword ? "text" : "password"}
+                      minLength={6}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter your password"
+                      autoComplete="new-password"
+                      className="h-11 w-full rounded-xl border border-slate-300 px-3.5 pr-12 text-[13px] font-normal outline-none transition placeholder:text-slate-400 focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#08aeca] focus:outline-none"
+                    >
+                      {showConfirmPassword ? (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                          <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                          <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.8A10.8 10.8 0 0 1 12 4.6c5.2 0 8.8 4.2 9.8 6.4a10.7 10.7 0 0 1-2.5 3.5M6.2 6.2C3.9 7.7 2.5 10 2.2 11c.5 1.1 2.1 4.1 5.9 5.6M14.1 19.1c-.7.2-1.4.3-2.1.3-5.2 0-8.8-4.2-9.8-6.4.3-.7 2.1-4.1 5.9-6.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                          <path d="M2.2 12s3.3-6.4 9.8-6.4S21.8 12 21.8 12s-3.3 6.4-9.8 6.4S2.2 12 2.2 12Z" stroke="currentColor" strokeWidth="1.8"/>
+                          <circle cx="12" cy="12" r="2.7" stroke="currentColor" strokeWidth="1.8"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </label>
               )}
 

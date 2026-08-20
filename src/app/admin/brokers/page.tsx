@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 
 type LoanFile = {
   id: string;
+  file_code?: string | null;
   broker_id: string | null;
   broker_name: string;
   connector_code: string | null;
@@ -74,6 +75,7 @@ export default function BrokerManagementPage() {
       .from("loan_files")
       .select(`
         id,
+        file_code,
         broker_id,
         broker_name,
         connector_code,
@@ -222,6 +224,12 @@ export default function BrokerManagementPage() {
     return `${Number(value || 0).toFixed(2)}%`;
   }
 
+  // Show the same human-readable File ID saved for the loan file.
+  // Keep the database UUID internally for all updates and actions.
+  function displayFileId(file: LoanFile) {
+    return String(file.file_code || file.id);
+  }
+
   function displayBrokerName(name: string) {
     const raw = String(name || "").trim();
 
@@ -366,6 +374,7 @@ export default function BrokerManagementPage() {
       .select(
         `
         id,
+        file_code,
         broker_id,
         broker_name,
         connector_code,
@@ -866,6 +875,10 @@ export default function BrokerManagementPage() {
                         <div className="min-w-0 flex-1">
                           <p className="break-words font-black text-[#073b4c]">
                             {file.customer_name}
+                          </p>
+
+                          <p className="mt-1 text-xs font-black text-[#0799b5]">
+                            File ID: {displayFileId(file)}
                           </p>
 
                           <p className="mt-1 text-sm text-slate-500">

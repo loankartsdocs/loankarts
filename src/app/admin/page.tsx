@@ -28,6 +28,7 @@ type CustomerApplication = {
 
 type DatabaseFile = {
   id: string;
+  file_code?: string | null;
   customer_name: string;
   mobile: string;
   email: string | null;
@@ -208,7 +209,7 @@ export default function AdminPage() {
     return files.filter((file) => {
       const matchesSearch =
         !text ||
-        file.id.toLowerCase().includes(text) ||
+        displayFileId(file).toLowerCase().includes(text) ||
         file.customer_name.toLowerCase().includes(text) ||
         file.mobile.toLowerCase().includes(text) ||
         file.broker_name.toLowerCase().includes(text) ||
@@ -353,6 +354,12 @@ export default function AdminPage() {
 
   function money(value: number) {
     return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+  }
+
+  // Show the same human-readable File ID saved for the loan file.
+  // Keep the database UUID internally for all updates and actions.
+  function displayFileId(file: DatabaseFile) {
+    return String(file.file_code || file.id);
   }
 
   // Older records may have the broker email saved in broker_name.
@@ -884,7 +891,7 @@ export default function AdminPage() {
 
                         <td className="px-4 py-3">
                           <p className="max-w-[220px] break-all font-bold text-[#073b4c]">
-                            {file.id}
+                            {displayFileId(file)}
                           </p>
                         </td>
 
@@ -1030,7 +1037,7 @@ export default function AdminPage() {
               <div className="min-w-0">
 
                 <p className="break-all text-xs font-bold text-[#10b7d3]">
-                  {selectedFile.id}
+                  {displayFileId(selectedFile)}
                 </p>
 
                 <h3 className="mt-1 text-xl font-black sm:text-2xl">
