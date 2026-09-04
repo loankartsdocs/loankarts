@@ -26,8 +26,6 @@ export default function BrokerAuthModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // IMPORTANT:
-  // Footer se register mode open hone par modal ka mode bhi update hoga.
   useEffect(() => {
     setMode(defaultMode);
     setErrorMessage("");
@@ -48,30 +46,102 @@ export default function BrokerAuthModal({
     setSuccessMessage("");
 
     try {
+      /* =====================================================
+         LOGIN
+         ===================================================== */
+
       if (mode === "login") {
+        const cleanEmail = email.trim().toLowerCase();
+
         const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: cleanEmail,
           password,
         });
 
         if (error) {
+          console.error("Login error:", error);
           setErrorMessage(error.message);
           setLoading(false);
           return;
+        }
+
+        /*
+         * After login, make sure the latest Auth metadata is also
+         * reflected in connector_profiles.
+         *
+         * This is useful for connectors created before the profile
+         * sync was added.
+         */
+        try {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (user) {
+            const metadata = user.user_metadata || {};
+
+            const metadataName =
+              typeof metadata.full_name === "string"
+                ? metadata.full_name.trim()
+                : "";
+
+            const metadataMobile =
+              typeof metadata.mobile === "string"
+                ? metadata.mobile.trim()
+                : "";
+
+            const finalName = metadataName || name.trim();
+            const finalMobile = metadataMobile || mobile.trim();
+            const finalEmail = user.email?.trim().toLowerCase() || cleanEmail;
+
+            if (finalName || finalMobile || finalEmail) {
+              const { error: syncError } = await supabase
+                .from("connector_profiles")
+                .update({
+                  full_name: finalName || undefined,
+                  mobile: finalMobile || undefined,
+                  email: finalEmail,
+                })
+                .eq("email", finalEmail);
+
+              if (syncError) {
+                console.warn(
+                  "Profile sync after login failed:",
+                  syncError.message
+                );
+              }
+            }
+          }
+        } catch (syncError) {
+          console.warn("Profile sync error:", syncError);
         }
 
         window.location.href = "/broker";
         return;
       }
 
-      if (!name.trim()) {
+      /* =====================================================
+         REGISTER VALIDATION
+         ===================================================== */
+
+      const cleanName = name.trim();
+      const cleanMobile = mobile.trim();
+      const cleanEmail = email.trim().toLowerCase();
+
+      if (!cleanName) {
         setErrorMessage("Please enter your full name.");
         setLoading(false);
         return;
       }
 
-      if (!mobile.trim()) {
+      if (!cleanMobile) {
         setErrorMessage("Please enter your mobile number.");
+        setLoading(false);
+        return;
+      }
+
+      if (!cleanEmail) {
+        setErrorMessage("Please enter your email address.");
         setLoading(false);
         return;
       }
@@ -88,28 +158,111 @@ export default function BrokerAuthModal({
         return;
       }
 
+      /* =====================================================
+         CREATE SUPABASE AUTH ACCOUNT
+         ===================================================== */
+
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: cleanEmail,
         password,
         options: {
           data: {
-            full_name: name.trim(),
-            mobile: mobile.trim(),
+            full_name: cleanName,
+            mobile: cleanMobile,
             role: "broker",
           },
         },
       });
 
       if (error) {
+        console.error("Auth registration error:", error);
         setErrorMessage(error.message);
         setLoading(false);
         return;
       }
 
+      if (!data.user) {
+        setErrorMessage("Account could not be created. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      /* =====================================================
+         SAVE CONNECTOR PROFILE
+         
+         Name + Email + Mobile are saved into
+         connector_profiles when a session is available.
+
+         The connector code remains database-controlled.
+         ===================================================== */
+
       if (data.session) {
+        const { error: profileError } = await supabase
+          .from("connector_profiles")
+          .upsert(
+            {
+              full_name: cleanName,
+              email: cleanEmail,
+              mobile: cleanMobile,
+            },
+            {
+              onConflict: "email",
+            }
+          );
+
+        if (profileError) {
+          console.error(
+            "Connector profile sync error:",
+            profileError
+          );
+
+          /*
+           * Do not stop the account creation because of a profile
+           * sync problem. Auth account is already created.
+           */
+        }
+      }
+
+      /* =====================================================
+         KEEP DATA AVAILABLE IN AUTH METADATA
+         
+         This is important when email verification is enabled.
+         After the connector verifies email and logs in, the
+         login sync above will update connector_profiles.
+         ===================================================== */
+
+      try {
+        localStorage.setItem(
+          "loankarts-pending-connector-profile",
+          JSON.stringify({
+            full_name: cleanName,
+            mobile: cleanMobile,
+            email: cleanEmail,
+            savedAt: Date.now(),
+          })
+        );
+      } catch {
+        // Ignore localStorage errors.
+      }
+
+      /* =====================================================
+         IF SESSION EXISTS → DASHBOARD
+         ===================================================== */
+
+      if (data.session) {
+        /*
+         * Small delay gives Supabase/database time to finish
+         * the profile write before dashboard loads.
+         */
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
         window.location.href = "/broker";
         return;
       }
+
+      /* =====================================================
+         EMAIL VERIFICATION REQUIRED
+         ===================================================== */
 
       setSuccessMessage(
         "Account created successfully. Please check your email to verify your account."
@@ -117,8 +270,14 @@ export default function BrokerAuthModal({
 
       setLoading(false);
     } catch (error) {
-      console.error(error);
-      setErrorMessage("Something went wrong. Please try again.");
+      console.error("Broker authentication error:", error);
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+
       setLoading(false);
     }
   }
@@ -149,6 +308,7 @@ export default function BrokerAuthModal({
         {/* =========================================================
             LEFT BRAND PANEL - DESKTOP
         ========================================================= */}
+
         <div className="hidden w-[39%] shrink-0 flex-col justify-between bg-[#062536] px-7 py-8 text-white md:flex">
 
           <div>
@@ -187,6 +347,7 @@ export default function BrokerAuthModal({
                   <p className="text-[12px] font-bold text-white">
                     Easy Partner Access
                   </p>
+
                   <p className="mt-0.5 text-[10px] text-white/40">
                     Simple partner account management.
                   </p>
@@ -202,6 +363,7 @@ export default function BrokerAuthModal({
                   <p className="text-[12px] font-bold text-white">
                     Professional Support
                   </p>
+
                   <p className="mt-0.5 text-[10px] text-white/40">
                     Support throughout your journey.
                   </p>
@@ -220,9 +382,11 @@ export default function BrokerAuthModal({
         {/* =========================================================
             RIGHT FORM AREA
         ========================================================= */}
+
         <div className="min-w-0 flex-1 overflow-y-auto bg-white">
 
           {/* MOBILE BRANDING */}
+
           <div className="bg-[#062536] px-6 pb-5 pt-6 text-white md:hidden">
 
             <img
@@ -240,6 +404,7 @@ export default function BrokerAuthModal({
           <div className="p-6 sm:p-8">
 
             {/* TITLE */}
+
             <div className="pr-8">
 
               <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#08aeca] md:hidden">
@@ -261,6 +426,7 @@ export default function BrokerAuthModal({
             </div>
 
             {/* TABS */}
+
             <div className="mt-5 flex rounded-xl bg-[#f1f7f9] p-1">
 
               <button
@@ -290,9 +456,11 @@ export default function BrokerAuthModal({
             </div>
 
             {/* FORM */}
+
             <form onSubmit={handleSubmit} className="mt-5">
 
               {/* ERROR */}
+
               {errorMessage && (
                 <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-[12px] leading-5 text-red-700">
                   <p className="font-bold">Please check your details</p>
@@ -301,6 +469,7 @@ export default function BrokerAuthModal({
               )}
 
               {/* SUCCESS */}
+
               {successMessage && (
                 <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-[12px] leading-5 text-green-700">
                   <p className="font-bold">✓ Account Created</p>
@@ -309,6 +478,7 @@ export default function BrokerAuthModal({
               )}
 
               {/* NAME + MOBILE - SIGNUP ONLY */}
+
               {mode === "register" && (
                 <div className="grid gap-3 sm:grid-cols-2">
 
@@ -344,6 +514,7 @@ export default function BrokerAuthModal({
               )}
 
               {/* EMAIL */}
+
               <label
                 className={`block text-[12px] font-bold text-[#082f42] ${
                   mode === "register" ? "mt-3.5" : ""
@@ -363,6 +534,7 @@ export default function BrokerAuthModal({
               </label>
 
               {/* PASSWORD */}
+
               <label className="mt-3.5 block text-[12px] font-bold text-[#082f42]">
                 Password
 
@@ -383,6 +555,7 @@ export default function BrokerAuthModal({
               </label>
 
               {/* CONFIRM PASSWORD */}
+
               {mode === "register" && (
                 <label className="mt-3.5 block text-[12px] font-bold text-[#082f42]">
                   Confirm Password
@@ -401,6 +574,7 @@ export default function BrokerAuthModal({
               )}
 
               {/* SUBMIT */}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -416,11 +590,12 @@ export default function BrokerAuthModal({
               </button>
 
               {/* SWITCH */}
+
               <p className="mt-4 text-center text-[12px] text-slate-500">
 
                 {mode === "login" ? (
                   <>
-                    Don't have a connector account?{" "}
+                    Don't have a connector account{" "}
                     <button
                       type="button"
                       onClick={() => changeMode("register")}
@@ -448,7 +623,6 @@ export default function BrokerAuthModal({
 
           </div>
         </div>
-
       </div>
     </div>
   );

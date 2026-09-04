@@ -12,6 +12,7 @@ type FileStatus =
 
 type LoanFile = {
   id: string;
+  file_code: string | null;
   customer_name: string;
   mobile: string;
   email: string | null;
@@ -122,6 +123,7 @@ export default function BrokerFilesPage() {
         .select(
           `
           id,
+          file_code,
           customer_name,
           mobile,
           email,
@@ -295,8 +297,7 @@ export default function BrokerFilesPage() {
           }
 
           return (
-            file.id
-              .toLowerCase()
+            (file.file_code || file.id).toLowerCase()
               .includes(query) ||
             file.customer_name
               .toLowerCase()
@@ -650,7 +651,7 @@ export default function BrokerFilesPage() {
                         <td className="px-6 py-5">
 
                           <span className="text-xs font-black text-[#073b4c]">
-                            {file.id}
+                           {file.file_code || file.id}
                           </span>
 
                         </td>
@@ -887,9 +888,9 @@ export default function BrokerFilesPage() {
                 </h2>
 
                 <p className="mt-1 text-xs text-white/50">
-                  File ID:{" "}
-                  {selectedFile.id}
-                </p>
+  File ID:{" "}
+  {selectedFile.file_code || selectedFile.id}
+</p>
 
               </div>
 
@@ -1087,6 +1088,147 @@ export default function BrokerFilesPage() {
 
               </div>
 
+              {/* ADDITIONAL DOCUMENTS */}
+<div className="mt-6">
+  <h3 className="text-base font-black text-[#062536]">
+    Send Additional Document
+  </h3>
+
+  <p className="mt-1 text-sm leading-6 text-slate-500">
+    If any additional document is required, send it to LoanKarts anytime.
+    Your File ID and Connector ID will be included automatically.
+  </p>
+
+  <div className="mt-4 grid gap-4 md:grid-cols-2">
+
+    {/* EMAIL */}
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <div className="flex items-start gap-4">
+
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-xl shadow-sm ring-1 ring-slate-200">
+          ✉
+        </div>
+
+        <div className="min-w-0 flex-1">
+
+          <h4 className="text-base font-black text-[#073b4c]">
+            Send by Email
+          </h4>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Attach your additional document and send it directly to LoanKarts.
+          </p>
+
+          <div className="mt-4 space-y-1">
+            <p className="text-xs font-semibold text-slate-600">
+              File ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {selectedFile.file_code || selectedFile.id}
+              </span>
+            </p>
+
+            <p className="text-xs font-semibold text-slate-600">
+              Connector ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {connectorCode || "Available"}
+              </span>
+            </p>
+          </div>
+
+          <a
+            href={`mailto:backend.loankarts@gmail.com?subject=${encodeURIComponent(
+              `Additional Document - ${selectedFile.file_code || selectedFile.id}`
+            )}&body=${encodeURIComponent(
+              `Hello LoanKarts Team,
+
+I am sending an additional document for my loan file.
+
+File ID: ${selectedFile.file_code || selectedFile.id}
+
+Connector ID: ${connectorCode || "Available"}
+
+Customer Name: ${selectedFile.customer_name}
+
+Please find the additional document attached.
+
+Regards`
+            )}`}
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#073b4c] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#062f3e]"
+          >
+            Email Additional Document →
+          </a>
+
+        </div>
+      </div>
+    </div>
+
+
+    {/* WHATSAPP */}
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+      <div className="flex items-start gap-4">
+
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-black text-green-600 shadow-sm ring-1 ring-emerald-200">
+          WA
+        </div>
+
+        <div className="min-w-0 flex-1">
+
+          <h4 className="text-base font-black text-[#073b4c]">
+            Send by WhatsApp
+          </h4>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Send the additional document directly to LoanKarts WhatsApp.
+          </p>
+
+          <div className="mt-4 space-y-1">
+            <p className="text-xs font-semibold text-slate-600">
+              File ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {selectedFile.file_code || selectedFile.id}
+              </span>
+            </p>
+
+            <p className="text-xs font-semibold text-slate-600">
+              Connector ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {connectorCode || "Available"}
+              </span>
+            </p>
+          </div>
+
+          <a
+            href={`https://wa.me/999095435?text=${encodeURIComponent(
+              `Hello LoanKarts Team,
+
+I am sending an additional document for my loan file.
+
+File ID: ${selectedFile.file_code || selectedFile.id}
+
+Connector ID: ${connectorCode || "Available"}
+
+Customer Name: ${selectedFile.customer_name}
+
+Please find the additional document attached.`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#16a34a] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#15803d]"
+          >
+            WhatsApp Additional Document →
+          </a>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div className="mt-4 rounded-xl border border-cyan-100 bg-cyan-50 p-4 text-xs leading-5 text-[#07556a]">
+    <strong>Important:</strong> Always attach the document and make sure the
+    File ID and Connector ID are correct before sending.
+  </div>
+</div>
 
               {/* CLOSE */}
 

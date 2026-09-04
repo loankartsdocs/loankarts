@@ -1,41 +1,136 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function BrokerLoginPage() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function handleLogin(e: FormEvent) {
+  // --------------------------------------------------
+  // CHECK EXISTING LOGIN SESSION
+  // --------------------------------------------------
+  useEffect(() => {
+    let mounted = true;
+
+    const checkSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        // Already logged in -> don't show login page
+        if (session?.user) {
+          router.replace("/broker");
+          return;
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      } finally {
+        if (mounted) {
+          setCheckingSession(false);
+        }
+      }
+    };
+
+    checkSession();
+
+    // Listen for login/logout changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      if (
+        (event === "SIGNED_IN" || event === "INITIAL_SESSION") &&
+        session?.user
+      ) {
+        router.replace("/broker");
+      }
+
+      if (event === "SIGNED_OUT") {
+        setCheckingSession(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  // --------------------------------------------------
+  // LOGIN
+  // --------------------------------------------------
+  async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (loading) return;
 
     setLoading(true);
     setErrorMessage("");
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+    const cleanEmail = email.trim().toLowerCase();
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
       password,
     });
 
     if (error) {
-      console.error(error);
-      setErrorMessage(error.message);
+      console.error("Login error:", error);
+
+      setErrorMessage(
+        error.message || "Invalid email or password. Please try again."
+      );
+
       setLoading(false);
       return;
     }
 
-    window.location.href = "/broker";
+    if (!data.session || !data.user) {
+      setErrorMessage("Login could not be completed. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    // Use Next.js router instead of full page reload
+    router.replace("/broker");
+    router.refresh();
   }
 
+  // --------------------------------------------------
+  // SHOW LOADING WHILE SESSION IS BEING CHECKED
+  // --------------------------------------------------
+  if (checkingSession) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f4f8fb] px-5">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#08b8d4]" />
+
+          <p className="mt-4 text-sm font-bold text-[#082f42]">
+            Checking your session...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // --------------------------------------------------
+  // LOGIN PAGE
+  // --------------------------------------------------
   return (
     <main className="min-h-screen bg-[#f4f8fb] px-5 py-10">
-
       {/* LOGO */}
       <div className="mx-auto mb-8 flex justify-center">
         <a href="/">
@@ -49,12 +144,10 @@ export default function BrokerLoginPage() {
 
       {/* LOGIN CARD */}
       <div className="mx-auto w-full max-w-[480px]">
-
         <form
           onSubmit={handleLogin}
           className="rounded-[24px] border border-slate-200 bg-white p-7 shadow-xl sm:p-9"
         >
-
           {/* TITLE */}
           <div className="text-center">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#08aeca]">
@@ -75,9 +168,7 @@ export default function BrokerLoginPage() {
             <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               <p className="font-bold">Login failed</p>
 
-              <p className="mt-1">
-                {errorMessage}
-              </p>
+              <p className="mt-1">{errorMessage}</p>
             </div>
           )}
 
@@ -89,6 +180,7 @@ export default function BrokerLoginPage() {
 
             <input
               required
+              autoComplete="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -106,6 +198,7 @@ export default function BrokerLoginPage() {
             <div className="relative">
               <input
                 required
+                autoComplete="current-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -115,8 +208,10 @@ export default function BrokerLoginPage() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={
+                  showPassword ? "Hide password" : "Show password"
+                }
                 className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-cyan-50 hover:text-[#08aeca]"
               >
                 {showPassword ? (
@@ -133,16 +228,19 @@ export default function BrokerLoginPage() {
                       strokeLinejoin="round"
                       d="M3 3l18 18"
                     />
+
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       d="M10.58 10.58a2 2 0 002.83 2.83"
                     />
+
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       d="M9.88 4.24A9.77 9.77 0 0112 4c5.5 0 9 6 9 8a11.1 11.1 0 01-2.04 3.34"
                     />
+
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -163,6 +261,7 @@ export default function BrokerLoginPage() {
                       strokeLinejoin="round"
                       d="M2.25 12s3.5-7 9.75-7 9.75 7 9.75 7-3.5 7-9.75 7-9.75-7-9.75-7z"
                     />
+
                     <circle
                       cx="12"
                       cy="12"
@@ -206,13 +305,11 @@ export default function BrokerLoginPage() {
           >
             ← Back to Main Website
           </a>
-
         </form>
 
         <p className="mt-5 text-center text-xs text-slate-400">
           LoanKarts — Your trusted loan assistance partner
         </p>
-
       </div>
     </main>
   );
