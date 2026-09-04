@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type FileStatus =
@@ -97,6 +97,7 @@ export default function AdminPage() {
   const [customerApplications, setCustomerApplications] = useState<CustomerApplication[]>([]);
   const [customerLoading, setCustomerLoading] = useState(true);
   const [customerError, setCustomerError] = useState("");
+  const loadRequestRef = useRef(0);
 
   async function loadCustomerApplications() {
     setCustomerLoading(true);
@@ -118,54 +119,128 @@ export default function AdminPage() {
     setCustomerLoading(false);
   }
 
-  async function loadFiles() {
-    setLoading(true);
-    setErrorMessage("");
+  async function getStableAdminUser() {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-    try {
+      if (error) {
+        console.error("Supabase session error:", error);
+      }
+
+      if (session?.user) return session.user;
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
+      if (user) return user;
+
+      if (attempt < 7) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 250 + attempt * 100)
+        );
+      }
+    }
+
+    return null;
+  }
+
+  async function loadFiles(providedUser?: { id: string; email?: string | null }) {
+    const requestId = ++loadRequestRef.current;
+    setLoading(true);
+    setErrorMessage("");
+
+    try {
+      const user = providedUser || (await getStableAdminUser());
+
+      // Auth redirects are handled only by the auth listener below. This
+      // prevents a refresh race from sending a valid admin to the login page.
       if (!user) {
-        window.location.href = "/admin/login";
+        if (requestId === loadRequestRef.current) {
+          setErrorMessage("Your admin session is still being restored. Please wait a moment.");
+        }
         return;
       }
 
-      if (user.email?.toLowerCase() !== "docs@loankarts.com") {
+      if (user.email?.trim().toLowerCase() !== "docs@loankarts.com") {
         await supabase.auth.signOut();
-        window.location.href = "/admin/login";
         return;
       }
 
       const { data, error } = await supabase
         .from("loan_files")
         .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
+        .order("created_at", { ascending: false });
 
-      if (error) {
-        throw new Error(error.message);
+      if (error) throw new Error(error.message);
+
+      if (requestId === loadRequestRef.current) {
+        setFiles((data || []) as DatabaseFile[]);
       }
-
-      setFiles((data || []) as DatabaseFile[]);
     } catch (error) {
       console.error(error);
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to load loan files."
-      );
+      if (requestId === loadRequestRef.current) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Unable to load loan files."
+        );
+      }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
-    loadFiles();
-    loadCustomerApplications();
+    let mounted = true;
+    let redirectTimer: number | null = null;
+
+    const redirectToLogin = () => {
+      if (!mounted) return;
+      window.location.replace("/admin/login");
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      if (session?.user) {
+        if (redirectTimer !== null) {
+          window.clearTimeout(redirectTimer);
+          redirectTimer = null;
+        }
+        void loadFiles(session.user);
+        void loadCustomerApplications();
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        redirectToLogin();
+      }
+    });
+
+    const initialize = async () => {
+      const user = await getStableAdminUser();
+      if (!mounted) return;
+
+      if (user) {
+        void loadFiles(user);
+        void loadCustomerApplications();
+      } else {
+        redirectTimer = window.setTimeout(() => {
+          redirectToLogin();
+        }, 1200);
+      }
+    };
+
+    void initialize();
 
     const channel = supabase
       .channel("admin-loan-files")
@@ -177,7 +252,7 @@ export default function AdminPage() {
           table: "loan_files",
         },
         () => {
-          loadFiles();
+          if (mounted) void loadFiles();
         }
       )
       .subscribe();
@@ -192,12 +267,15 @@ export default function AdminPage() {
           table: "customer_applications",
         },
         () => {
-          loadCustomerApplications();
+          if (mounted) void loadCustomerApplications();
         }
       )
       .subscribe();
 
     return () => {
+      mounted = false;
+      if (redirectTimer !== null) window.clearTimeout(redirectTimer);
+      subscription.unsubscribe();
       supabase.removeChannel(channel);
       supabase.removeChannel(customerChannel);
     };
@@ -509,7 +587,7 @@ export default function AdminPage() {
             </p>
 
             <button
-              onClick={loadFiles}
+              onClick={() => void loadFiles()}
               className="mt-4 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white"
             >
               Try Again
