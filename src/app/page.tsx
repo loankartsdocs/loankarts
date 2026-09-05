@@ -2042,21 +2042,68 @@ function BrokerAuthModal({
     setSuccessMessage("");
   };
 
-  async function handleForgotPassword() {
-    const resetEmail = email.trim().toLowerCase();
-    if (!resetEmail) { setErrorMessage("Please enter your email address first."); return; }
-    setLoading(true); setErrorMessage(""); setSuccessMessage("");
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/connector/reset-password`,
-      });
-      if (error) { setErrorMessage(error.message); return; }
-      setSuccessMessage("Password reset link sent. Please check your email and follow the secure link.");
-      setForgotMode(false);
-    } catch { setErrorMessage("Unable to send the reset link. Please try again."); }
-    finally { setLoading(false); }
+ async function handleForgotPassword() {
+  const resetEmail = email.trim().toLowerCase();
+
+  if (!resetEmail) {
+    setErrorMessage("Please enter your email address first.");
+    return;
   }
 
+  setLoading(true);
+  setErrorMessage("");
+  setSuccessMessage("");
+
+  try {
+    // First check whether this email belongs to a LoanKarts Connector
+    const { data: connectorExists, error: checkError } =
+      await supabase.rpc("connector_email_exists", {
+        p_email: resetEmail,
+      });
+
+    if (checkError) {
+      console.error("Connector email check error:", checkError);
+      setErrorMessage(
+        "Unable to verify this email. Please try again."
+      );
+      return;
+    }
+
+    // Account does not exist
+    if (!connectorExists) {
+      setErrorMessage(
+        "Account not found. Please create your Connector account first."
+      );
+      return;
+    }
+
+    // Account exists — send password reset email
+    const { error } =
+      await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/broker/reset-password`
+      });
+
+    if (error) {
+      console.error("Password reset error:", error);
+      setErrorMessage(error.message);
+      return;
+    }
+
+    setSuccessMessage(
+      "Password reset link sent successfully. Please check your email and follow the secure link."
+    );
+
+    setForgotMode(false);
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    setErrorMessage(
+      "Unable to send the reset link. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+}
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
@@ -2304,7 +2351,7 @@ function BrokerAuthModal({
 
               {successMessage && (
                 <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-[12px] leading-5 text-green-700">
-                  <p className="font-bold">✓ Account Created</p>
+                 <p className="font-bold">✓ Password Reset</p>
                   <p>{successMessage}</p>
                 </div>
               )}
