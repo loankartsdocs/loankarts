@@ -1869,7 +1869,7 @@ customer_name,
 
                 <p className="mt-1 truncate text-xs text-white/55 sm:text-sm">
                   File ID:{" "}
-                 {selectedFile.file_code || selectedFile.id}
+                 {selectedFile.file_code}
                 </p>
 
               </div>
@@ -2376,7 +2376,7 @@ customer_name,
             <p className="text-xs text-slate-600">
               File ID:{" "}
               <span className="font-black text-[#073b4c]">
-                {selectedFile.id}
+               {selectedFile.file_code}
               </span>
             </p>
 
@@ -2398,7 +2398,7 @@ customer_name,
 
 I am sending an additional document for my loan file.
 
-File ID: ${selectedFile.id}
+File ID: ${selectedFile.file_code}
 Connector ID: ${connectorCode || "—"}
 Customer Name: ${selectedFile.customer_name}
 
@@ -2444,7 +2444,7 @@ Regards`
             <p className="text-xs text-slate-600">
               File ID:{" "}
               <span className="font-black text-[#073b4c]">
-                {selectedFile.id}
+                {selectedFile.file_code}
               </span>
             </p>
 
@@ -2464,7 +2464,7 @@ Regards`
 
 I am sending an additional document for my loan file.
 
-File ID: ${selectedFile.id}
+File ID: ${selectedFile.file_code}
 Connector ID: ${connectorCode || "—"}
 Customer Name: ${selectedFile.customer_name}
 
