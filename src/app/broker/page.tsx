@@ -2334,6 +2334,164 @@ customer_name,
 
               </div>
 
+              {/* ADDITIONAL DOCUMENTS */}
+
+<div className="mt-6">
+
+  <h4 className="text-[15px] font-extrabold text-[#073b4c]">
+    Send Additional Document
+  </h4>
+
+  <p className="mt-1 text-[11px] leading-5 text-slate-500">
+    If any additional document is required after submission,
+    you can send it directly to LoanKarts.
+  </p>
+
+
+  <div className="mt-4 grid gap-4 md:grid-cols-2">
+
+    {/* EMAIL */}
+
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+
+      <div className="flex items-start gap-4">
+
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-lg shadow-sm ring-1 ring-slate-200">
+          ✉
+        </div>
+
+        <div className="min-w-0 flex-1">
+
+          <h5 className="font-black text-[#073b4c]">
+            Send by Email
+          </h5>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Send the additional document to LoanKarts by email.
+          </p>
+
+
+          <div className="mt-3 space-y-1">
+
+            <p className="text-xs text-slate-600">
+              File ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {selectedFile.id}
+              </span>
+            </p>
+
+            <p className="text-xs text-slate-600">
+              Connector ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {connectorCode || "—"}
+              </span>
+            </p>
+
+          </div>
+
+
+          <a
+            href={`mailto:backend.loankarts@gmail.com?subject=${encodeURIComponent(
+              `Additional Document - File ID ${selectedFile.id}`
+            )}&body=${encodeURIComponent(
+              `Hello LoanKarts Team,
+
+I am sending an additional document for my loan file.
+
+File ID: ${selectedFile.id}
+Connector ID: ${connectorCode || "—"}
+Customer Name: ${selectedFile.customer_name}
+
+Please find the additional document attached.
+
+Regards`
+            )}`}
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#073b4c] px-4 py-2.5 text-xs font-black text-white transition hover:bg-[#062f3e]"
+          >
+            Email Additional Document →
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    {/* WHATSAPP */}
+
+    <div className="rounded-2xl border border-green-200 bg-green-50/60 p-5">
+
+      <div className="flex items-start gap-4">
+
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-black text-green-600 shadow-sm ring-1 ring-green-200">
+          WA
+        </div>
+
+        <div className="min-w-0 flex-1">
+
+          <h5 className="font-black text-[#073b4c]">
+            Send by WhatsApp
+          </h5>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Open LoanKarts WhatsApp directly and send the document.
+          </p>
+
+
+          <div className="mt-3 space-y-1">
+
+            <p className="text-xs text-slate-600">
+              File ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {selectedFile.id}
+              </span>
+            </p>
+
+            <p className="text-xs text-slate-600">
+              Connector ID:{" "}
+              <span className="font-black text-[#073b4c]">
+                {connectorCode || "—"}
+              </span>
+            </p>
+
+          </div>
+
+
+          <a
+            href={`https://wa.me/9990954351?text=${encodeURIComponent(
+              `Hello LoanKarts Team,
+
+I am sending an additional document for my loan file.
+
+File ID: ${selectedFile.id}
+Connector ID: ${connectorCode || "—"}
+Customer Name: ${selectedFile.customer_name}
+
+Please find the additional document attached.`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-green-600 px-4 py-2.5 text-xs font-black text-white transition hover:bg-green-700"
+          >
+            WhatsApp Additional Document →
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div className="mt-4 rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-xs leading-5 text-[#07556a]">
+    <strong>Important:</strong> Always mention the correct File ID and
+    Connector ID when sending additional documents.
+  </div>
+
+</div>
 
               {/* CLOSE */}
 
