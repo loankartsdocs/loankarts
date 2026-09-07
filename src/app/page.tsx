@@ -125,6 +125,8 @@ export default function Home() {
   const [emiPrincipal, setEmiPrincipal] = useState(2500000);
   const [emiRate, setEmiRate] = useState(10);
   const [emiTenure, setEmiTenure] = useState(5);
+  const [emiTenureUnit, setEmiTenureUnit] = useState<"months" | "years">("years");
+  const [emiCalculated, setEmiCalculated] = useState(false);
 
   const submitLoanApplication = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -207,39 +209,78 @@ export default function Home() {
     };
   }, []);
 
-  const calculateEMI = () => {
-    // Values are controlled by React state, so the calculator updates instantly.
-    return true;
-  };
+const calculateEMI = () => {
+  if (emiPrincipal <= 0 || emiRate < 0 || emiTenure <= 0) {
+    alert("Please enter valid loan amount, interest rate and tenure.");
+    return;
+  }
 
-  const months = emiTenure * 12;
-  const monthlyRate = emiRate / 12 / 100;
-  const emi =
-    monthlyRate === 0
-      ? emiPrincipal / months
-      : (emiPrincipal *
-          monthlyRate *
-          Math.pow(1 + monthlyRate, months)) /
-        (Math.pow(1 + monthlyRate, months) - 1);
+  setEmiCalculated(true);
+};
 
-  const totalPayment = emi * months;
-  const totalInterest = Math.max(0, totalPayment - emiPrincipal);
-  const principalShare = totalPayment > 0 ? (emiPrincipal / totalPayment) * 100 : 0;
-  const interestShare = totalPayment > 0 ? (totalInterest / totalPayment) * 100 : 0;
+const principal = Math.max(
+  0,
+  Number(String(emiPrincipal).replace(/[^0-9.]/g, "")) || 0
+);
 
-  const formatCurrency = (value: number) =>
-    `₹${Math.round(value).toLocaleString("en-IN")}`;
+const rate = Math.max(
+  0,
+  Number(String(emiRate).replace(/[^0-9.]/g, "")) || 0
+);
 
-  const formatLakhCrore = (value: number) => {
-    if (value >= 10000000) {
-      return `₹${(value / 10000000).toFixed(2)} Cr`;
-    }
-    if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(2)} L`;
-    }
-    return formatCurrency(value);
-  };
+const tenureValue = Math.max(
+  1,
+  Number(String(emiTenure).replace(/[^0-9.]/g, "")) || 1
+);
 
+const months =
+  emiTenureUnit === "years"
+    ? Math.max(1, Math.round(tenureValue * 12))
+    : Math.max(1, Math.round(tenureValue));
+
+const monthlyRate = rate / 12 / 100;
+
+const emi =
+  principal <= 0
+    ? 0
+    : monthlyRate === 0
+    ? principal / months
+    : (principal *
+        monthlyRate *
+        Math.pow(1 + monthlyRate, months)) /
+      (Math.pow(1 + monthlyRate, months) - 1);
+
+const totalPayment = emi * months;
+
+const totalInterest = Math.max(
+  0,
+  totalPayment - principal
+);
+
+const principalShare =
+  totalPayment > 0
+    ? (principal / totalPayment) * 100
+    : 0;
+
+const interestShare =
+  totalPayment > 0
+    ? (totalInterest / totalPayment) * 100
+    : 0;
+
+const formatCurrency = (value: number) =>
+  `₹${Math.round(value).toLocaleString("en-IN")}`;
+
+const formatLakhCrore = (value: number) => {
+  if (value >= 10000000) {
+    return `₹${(value / 10000000).toFixed(2)} Cr`;
+  }
+
+  if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(2)} L`;
+  }
+
+  return formatCurrency(value);
+};
   return (
    <main className="min-h-screen overflow-x-clip bg-white text-[#082f42]">
 
@@ -924,256 +965,399 @@ export default function Home() {
 
 
 
-      {/* ================= EMI CALCULATOR ================= */}
-      <section
-        id="emi-calculator"
-        className="bg-[#f5f8fb] py-10 sm:py-12"
-      >
-        <div className="mx-auto max-w-[1180px] px-5 sm:px-6">
+   {/* ================= EMI CALCULATOR ================= */}
+<section
+  id="emi-calculator"
+  className="bg-[#f5f8fb] py-10 sm:py-12"
+>
+  <div className="mx-auto max-w-[1180px] px-5 sm:px-6">
 
-          <SectionHeading
-            eyebrow="EMI CALCULATOR"
-            title="Plan Your Monthly EMI"
-            text="Adjust the loan amount, interest rate and tenure to instantly estimate your repayment."
-          />
+    <SectionHeading
+      eyebrow="EMI CALCULATOR"
+      title="Plan Your Monthly EMI"
+      text="Enter your loan details and instantly estimate your monthly repayment."
+    />
 
-          <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_1.12fr]">
+    <div className="mt-7 grid gap-5 lg:grid-cols-[1fr_1.12fr]">
 
-            {/* ================= PREMIUM INPUT PANEL ================= */}
-            <div className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_16px_38px_rgba(8,47,66,.09)] sm:p-6">
-              <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#08b8d4]/10 blur-3xl" />
-              <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-[#08b8d4]/5 blur-3xl" />
+      {/* ================= INPUT PANEL ================= */}
+      <div className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_16px_38px_rgba(8,47,66,.09)] sm:p-6">
 
-              <div className="relative">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-extrabold uppercase tracking-[.22em] text-[#08aeca]">
-                      LOAN PLANNER
-                    </p>
-                    <h3 className="mt-1.5 text-[24px] font-black tracking-[-.5px] text-[#082f42] sm:text-[26px]">
-                      Set your loan details
-                    </h3>
-                  </div>
+        <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#08b8d4]/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-[#08b8d4]/5 blur-3xl" />
 
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#cceff4] bg-[#eefbfd] text-[20px] font-black text-[#08aeca] shadow-sm">
-                    ₹
-                  </div>
-                </div>
+        <div className="relative">
 
-                {/* LOAN AMOUNT */}
-                <div className="mt-5">
-                  <div className="flex items-end justify-between gap-4">
-                    <label className="text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
-                      Loan Amount
-                    </label>
-                    <div className="rounded-xl border border-[#dceef2] bg-[#f5fafb] px-3.5 py-1.5 text-[17px] font-black text-[#082f42] shadow-sm sm:text-[19px]">
-                      {formatCurrency(emiPrincipal)}
-                    </div>
-                  </div>
+          <div className="flex items-center justify-between gap-4">
 
-                  <input
-                    aria-label="Loan Amount"
-                    type="range"
-                    min={100000}
-                    max={10000000}
-                    step={50000}
-                    value={emiPrincipal}
-                    onChange={(e) => setEmiPrincipal(Number(e.target.value))}
-                    className="lk-emi-range mt-4"
-                    style={{
-                      background: `linear-gradient(to right, #08b8d4 0%, #08b8d4 ${((emiPrincipal - 100000) / (10000000 - 100000)) * 100}%, #dbe5e8 ${((emiPrincipal - 100000) / (10000000 - 100000)) * 100}%, #dbe5e8 100%)`,
-                    }}
-                  />
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.22em] text-[#08aeca]">
+                LOAN PLANNER
+              </p>
 
-                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
-                    <span>₹1 Lakh</span>
-                    <span>₹1 Crore</span>
-                  </div>
-                </div>
-
-                {/* INTEREST RATE */}
-                <div className="mt-5">
-                  <div className="flex items-end justify-between gap-4">
-                    <label className="text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
-                      Interest Rate
-                    </label>
-                    <div className="rounded-xl border border-[#dceef2] bg-[#f5fafb] px-3.5 py-1.5 text-[17px] font-black text-[#082f42] shadow-sm sm:text-[19px]">
-                      {emiRate.toFixed(1)}%
-                      <span className="ml-1 text-[11px] font-bold text-slate-400">p.a.</span>
-                    </div>
-                  </div>
-
-                  <input
-                    aria-label="Annual Interest Rate"
-                    type="range"
-                    min={5}
-                    max={20}
-                    step={0.1}
-                    value={emiRate}
-                    onChange={(e) => setEmiRate(Number(e.target.value))}
-                    className="lk-emi-range mt-4"
-                    style={{
-                      background: `linear-gradient(to right, #08b8d4 0%, #08b8d4 ${((emiRate - 5) / 15) * 100}%, #dbe5e8 ${((emiRate - 5) / 15) * 100}%, #dbe5e8 100%)`,
-                    }}
-                  />
-
-                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
-                    <span>5%</span>
-                    <span>20%</span>
-                  </div>
-                </div>
-
-                {/* TENURE */}
-                <div className="mt-5">
-                  <div className="flex items-end justify-between gap-4">
-                    <label className="text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
-                      Loan Tenure
-                    </label>
-                    <div className="rounded-xl border border-[#dceef2] bg-[#f5fafb] px-3.5 py-1.5 text-[17px] font-black text-[#082f42] shadow-sm sm:text-[19px]">
-                      {emiTenure}
-                      <span className="ml-1 text-[11px] font-bold text-slate-400">years</span>
-                    </div>
-                  </div>
-
-                  <input
-                    aria-label="Loan Tenure"
-                    type="range"
-                    min={1}
-                    max={30}
-                    step={1}
-                    value={emiTenure}
-                    onChange={(e) => setEmiTenure(Number(e.target.value))}
-                    className="lk-emi-range mt-4"
-                    style={{
-                      background: `linear-gradient(to right, #08b8d4 0%, #08b8d4 ${((emiTenure - 1) / 29) * 100}%, #dbe5e8 ${((emiTenure - 1) / 29) * 100}%, #dbe5e8 100%)`,
-                    }}
-                  />
-
-                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
-                    <span>1 year</span>
-                    <span>30 years</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={calculateEMI}
-                  className="mt-5 flex h-11 w-full items-center justify-center rounded-xl bg-[#082f42] text-[13px] font-extrabold tracking-wide text-white shadow-[0_10px_24px_rgba(8,47,66,.18)] transition hover:-translate-y-0.5 hover:bg-[#063247] hover:shadow-[0_14px_28px_rgba(8,47,66,.22)]"
-                >
-                  CALCULATE EMI <span className="ml-2 text-[16px]">→</span>
-                </button>
-
-                <p className="mt-2.5 text-center text-[10px] font-medium text-slate-400">
-                  Drag the sliders to compare your repayment instantly.
-                </p>
-              </div>
+              <h3 className="mt-1.5 text-[24px] font-black tracking-[-.5px] text-[#082f42] sm:text-[26px]">
+                Set your loan details
+              </h3>
             </div>
 
-            {/* ================= PREMIUM RESULT PANEL ================= */}
-            <div className="relative overflow-hidden rounded-[22px] bg-[#082f42] p-5 text-white shadow-[0_18px_42px_rgba(8,47,66,.20)] sm:p-6">
-              <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#08b8d4]/15 blur-3xl" />
-              <div className="absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-[#08b8d4]/10 blur-3xl" />
-
-              <div className="relative flex h-full flex-col">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[9px] font-extrabold uppercase tracking-[.22em] text-[#16c6dc]">
-                      ESTIMATED REPAYMENT
-                    </p>
-                    <h3 className="mt-1.5 text-[22px] font-black sm:text-[25px]">
-                      Your EMI summary
-                    </h3>
-                  </div>
-                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-bold text-white/60">
-                    {emiTenure} YEAR PLAN
-                  </div>
-                </div>
-
-                <div className="mt-5 grid items-center gap-4 sm:grid-cols-[1fr_140px]">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/45">
-                      Monthly EMI
-                    </p>
-                    <div className="mt-1.5 text-[34px] font-black tracking-tight text-[#16c6dc] sm:text-[39px]">
-                      {formatCurrency(emi)}
-                    </div>
-                    <p className="mt-1 text-[10px] text-white/40">
-                      Approx. monthly repayment
-                    </p>
-                  </div>
-
-                  {/* DONUT CHART */}
-                  <div
-                    className="mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full shadow-[0_10px_30px_rgba(0,0,0,.16)]"
-                    style={{
-                      background: `conic-gradient(#16c6dc 0% ${principalShare}%, #35d2c5 ${principalShare}% ${principalShare + interestShare}%, rgba(255,255,255,.08) ${principalShare + interestShare}% 100%)`,
-                    }}
-                  >
-                    <div className="flex h-[94px] w-[94px] flex-col items-center justify-center rounded-full bg-[#082f42] text-center shadow-inner">
-                      <span className="text-[8px] uppercase tracking-[.16em] text-white/40">
-                        Interest
-                      </span>
-                      <span className="mt-1 text-lg font-black text-white">
-                        {interestShare.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/[.06] p-3.5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
-                        Principal
-                      </p>
-                      <p className="mt-1 text-[16px] font-black text-white">
-                        {formatLakhCrore(emiPrincipal)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
-                        Total Interest
-                      </p>
-                      <p className="mt-1 text-[16px] font-black text-[#35d2c5]">
-                        {formatLakhCrore(totalInterest)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 border-t border-white/10 pt-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[9px] uppercase tracking-[.15em] text-white/40">
-                        Total Repayment
-                      </span>
-                      <span className="text-[18px] font-black text-white">
-                        {formatLakhCrore(totalPayment)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-4">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[9px] text-white/45">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-[#16c6dc]" />
-                      Principal {principalShare.toFixed(1)}%
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-[#35d2c5]" />
-                      Interest {interestShare.toFixed(1)}%
-                    </span>
-                  </div>
-                  <p className="mt-2 text-[9px] leading-4 text-white/35">
-                    Indicative calculation only. Actual EMI, rate, fees and approval depend on lender terms and eligibility.
-                  </p>
-                </div>
-              </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#cceff4] bg-[#eefbfd] text-[20px] font-black text-[#08aeca] shadow-sm">
+              ₹
             </div>
 
           </div>
-        </div>
-      </section>
 
+
+          {/* ================= LOAN AMOUNT ================= */}
+          <div className="mt-6">
+
+            <label className="block text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
+              Loan Amount
+            </label>
+
+            <div className="relative mt-2">
+
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[17px] font-black text-[#08aeca]">
+                ₹
+              </span>
+
+              <input
+                aria-label="Loan Amount"
+                type="number"
+                min={100000}
+                max={100000000}
+                step={1000}
+                value={emiPrincipal}
+            onChange={(e) => {
+  setEmiPrincipal(Number(e.target.value));
+  setEmiCalculated(false);
+}}
+                placeholder="Enter loan amount"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-[17px] font-black text-[#082f42] outline-none transition focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+              />
+
+            </div>
+
+            <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
+              <span>Minimum ₹1 Lakh</span>
+              <span>Maximum ₹10 Crore</span>
+            </div>
+
+          </div>
+
+
+          {/* ================= INTEREST RATE ================= */}
+          <div className="mt-5">
+
+            <label className="block text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
+              Interest Rate
+            </label>
+
+            <div className="relative mt-2">
+
+              <input
+                aria-label="Annual Interest Rate"
+                type="number"
+                min={0}
+                max={50}
+                step={0.1}
+                value={emiRate}
+             onChange={(e) => {
+  setEmiRate(Number(e.target.value));
+  setEmiCalculated(false);
+}}
+                placeholder="Enter interest rate"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 pr-14 text-[17px] font-black text-[#082f42] outline-none transition focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+              />
+
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-black text-slate-400">
+                % p.a.
+              </span>
+
+            </div>
+
+            <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-400">
+              <span>0%</span>
+              <span>50%</span>
+            </div>
+
+          </div>
+
+
+          {/* ================= TENURE ================= */}
+          <div className="mt-5">
+
+            <label className="block text-[14px] font-extrabold text-[#082f42] sm:text-[15px]">
+              Loan Tenure
+            </label>
+
+            <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+
+              <input
+                aria-label="Loan Tenure"
+                type="number"
+                min={1}
+                max={360}
+                step={1}
+                value={emiTenure}
+              onChange={(e) => {
+  setEmiTenure(Number(e.target.value));
+  setEmiCalculated(false);
+}}
+                placeholder="Enter tenure"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[17px] font-black text-[#082f42] outline-none transition focus:border-[#08b8d4] focus:ring-4 focus:ring-cyan-50"
+              />
+
+              <div className="flex rounded-xl border border-slate-300 bg-[#f5fafb] p-1">
+
+                <button
+                  type="button"
+                  onClick={() => setEmiTenureUnit("months")}
+                  className={`rounded-lg px-4 text-[12px] font-extrabold transition ${
+                    emiTenureUnit === "months"
+                      ? "bg-[#08b8d4] text-white shadow-sm"
+                      : "text-slate-500 hover:text-[#082f42]"
+                  }`}
+                >
+                  Months
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEmiTenureUnit("years")}
+                  className={`rounded-lg px-4 text-[12px] font-extrabold transition ${
+                    emiTenureUnit === "years"
+                      ? "bg-[#08b8d4] text-white shadow-sm"
+                      : "text-slate-500 hover:text-[#082f42]"
+                  }`}
+                >
+                  Years
+                </button>
+
+              </div>
+
+            </div>
+
+            <p className="mt-1.5 text-[10px] font-semibold text-slate-400">
+              {emiTenureUnit === "years"
+                ? "Example: 5 years = 60 months"
+                : "Example: 60 months = 5 years"}
+            </p>
+
+          </div>
+
+
+          {/* ================= CALCULATE BUTTON ================= */}
+          <button
+            type="button"
+            onClick={calculateEMI}
+            className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-[#082f42] text-[13px] font-extrabold tracking-wide text-white shadow-[0_10px_24px_rgba(8,47,66,.18)] transition hover:-translate-y-0.5 hover:bg-[#063247] hover:shadow-[0_14px_28px_rgba(8,47,66,.22)]"
+          >
+            CALCULATE EMI
+            <span className="ml-2 text-[16px]">
+              →
+            </span>
+          </button>
+
+          <p className="mt-2.5 text-center text-[10px] font-medium text-slate-400">
+            Enter your details or press Calculate EMI to view your repayment.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      {/* ================= RESULT PANEL ================= */}
+      {!emiCalculated ? (
+  <div className="relative flex h-full min-h-[520px] flex-col items-center justify-center rounded-[22px] bg-[#082f42] p-6 text-center text-white shadow-[0_18px_42px_rgba(8,47,66,.20)]">
+    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-3xl">
+      ₹
+    </div>
+
+    <h3 className="mt-5 text-[24px] font-black">
+      Your EMI Summary
+    </h3>
+
+    <p className="mt-2 max-w-sm text-[12px] leading-5 text-white/50">
+      Enter your loan amount, interest rate and tenure, then click
+      <span className="font-bold text-[#16c6dc]"> Calculate EMI </span>
+      to view your repayment details.
+    </p>
+  </div>
+) : (
+      <div className="relative overflow-hidden rounded-[22px] bg-[#082f42] p-5 text-white shadow-[0_18px_42px_rgba(8,47,66,.20)] sm:p-6">
+
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#08b8d4]/15 blur-3xl" />
+        <div className="absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-[#08b8d4]/10 blur-3xl" />
+
+        <div className="relative flex h-full flex-col">
+
+          <div className="flex items-start justify-between gap-4">
+
+            <div>
+
+              <p className="text-[9px] font-extrabold uppercase tracking-[.22em] text-[#16c6dc]">
+                ESTIMATED REPAYMENT
+              </p>
+
+              <h3 className="mt-1.5 text-[22px] font-black sm:text-[25px]">
+                Your EMI summary
+              </h3>
+
+            </div>
+
+            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-bold text-white/60">
+              {tenureValue} {emiTenureUnit === "years" ? "YEAR" : "MONTH"} PLAN
+            </div>
+
+          </div>
+
+
+          {/* ================= MONTHLY EMI ================= */}
+          <div className="mt-6">
+
+            <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/45">
+              Monthly EMI
+            </p>
+
+            <div className="mt-1.5 text-[36px] font-black tracking-tight text-[#16c6dc] sm:text-[42px]">
+              {formatCurrency(emi)}
+            </div>
+
+            <p className="mt-1 text-[10px] text-white/40">
+              Approx. monthly repayment
+            </p>
+
+          </div>
+
+
+          {/* ================= SUMMARY ================= */}
+          <div className="mt-5 rounded-xl border border-white/10 bg-white/[.06] p-4">
+
+            <div className="grid grid-cols-2 gap-4">
+
+              <div>
+
+                <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                  Loan Amount
+                </p>
+
+                <p className="mt-1 text-[16px] font-black text-white">
+                  {formatLakhCrore(principal)}
+                </p>
+
+              </div>
+
+
+              <div>
+
+                <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                  Interest Rate
+                </p>
+
+                <p className="mt-1 text-[16px] font-black text-[#35d2c5]">
+                  {rate.toFixed(1)}%
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <div className="mt-4 border-t border-white/10 pt-4">
+
+              <div className="grid grid-cols-2 gap-4">
+
+                <div>
+
+                  <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                    Total Interest
+                  </p>
+
+                  <p className="mt-1 text-[16px] font-black text-[#35d2c5]">
+                    {formatLakhCrore(totalInterest)}
+                  </p>
+
+                </div>
+
+
+                <div>
+
+                  <p className="text-[9px] uppercase tracking-[.15em] text-white/40">
+                    Total Repayment
+                  </p>
+
+                  <p className="mt-1 text-[16px] font-black text-white">
+                    {formatLakhCrore(totalPayment)}
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* ================= CHART ================= */}
+          <div className="mt-5 flex justify-center">
+
+            <div
+              className="flex h-[132px] w-[132px] items-center justify-center rounded-full shadow-[0_10px_30px_rgba(0,0,0,.16)]"
+              style={{
+                background: `conic-gradient(#16c6dc 0% ${principalShare}%, #35d2c5 ${principalShare}% ${principalShare + interestShare}%, rgba(255,255,255,.08) ${principalShare + interestShare}% 100%)`,
+              }}
+            >
+
+              <div className="flex h-[94px] w-[94px] flex-col items-center justify-center rounded-full bg-[#082f42] text-center shadow-inner">
+
+                <span className="text-[8px] uppercase tracking-[.16em] text-white/40">
+                  Interest
+                </span>
+
+                <span className="mt-1 text-lg font-black text-white">
+                  {interestShare.toFixed(1)}%
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* ================= FOOTER INFO ================= */}
+          <div className="mt-auto pt-5">
+
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[9px] text-white/45">
+
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#16c6dc]" />
+                Principal {principalShare.toFixed(1)}%
+              </span>
+
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#35d2c5]" />
+                Interest {interestShare.toFixed(1)}%
+              </span>
+
+            </div>
+
+            <p className="mt-2 text-center text-[9px] leading-4 text-white/35">
+              Indicative calculation only. Actual EMI, rate, fees and approval depend on lender terms and eligibility.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+)}
+    </div>
+
+  </div>
+</section>
 
       {/* ================= LOANS ================= */}
 
