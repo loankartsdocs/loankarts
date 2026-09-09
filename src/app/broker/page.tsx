@@ -2406,7 +2406,7 @@ Please find the additional document attached.
 
 Regards`
             )}`}
-            className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#073b4c] px-4 py-2.5 text-xs font-black text-white transition hover:bg-[#062f3e]"
+           className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#073b4c] px-4 py-2.5 text-xs font-black !text-white transition hover:bg-[#062f3e]"
           >
             Email Additional Document →
           </a>
@@ -2459,7 +2459,7 @@ Regards`
 
 
           <a
-            href={`https://wa.me/9990954351?text=${encodeURIComponent(
+            href={`https://wa.me/919990954351?text=${encodeURIComponent(
               `Hello LoanKarts Team,
 
 I am sending an additional document for my loan file.
