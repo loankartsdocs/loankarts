@@ -122,9 +122,9 @@ export default function Home() {
   const applicationResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ================= EMI CALCULATOR STATE =================
-  const [emiPrincipal, setEmiPrincipal] = useState(2500000);
-  const [emiRate, setEmiRate] = useState(10);
-  const [emiTenure, setEmiTenure] = useState(5);
+ const [emiPrincipal, setEmiPrincipal] = useState("");
+const [emiRate, setEmiRate] = useState("");
+const [emiTenure, setEmiTenure] = useState("");
   const [emiTenureUnit, setEmiTenureUnit] = useState<"months" | "years">("years");
   const [emiCalculated, setEmiCalculated] = useState(false);
 
@@ -210,14 +210,25 @@ export default function Home() {
   }, []);
 
 const calculateEMI = () => {
-  if (emiPrincipal <= 0 || emiRate < 0 || emiTenure <= 0) {
-    alert("Please enter valid loan amount, interest rate and tenure.");
+  const principalValue = Number(emiPrincipal);
+  const rateValue = Number(emiRate);
+  const tenureValue = Number(emiTenure);
+
+  if (
+    !emiPrincipal ||
+    !emiRate ||
+    !emiTenure ||
+    principalValue <= 0 ||
+    rateValue < 0 ||
+    tenureValue <= 0
+  ) {
+    alert("Please enter loan amount, interest rate and tenure.");
+    setEmiCalculated(false);
     return;
   }
 
   setEmiCalculated(true);
 };
-
 const principal = Math.max(
   0,
   Number(String(emiPrincipal).replace(/[^0-9.]/g, "")) || 0
@@ -1027,8 +1038,12 @@ const formatLakhCrore = (value: number) => {
                 max={100000000}
                 step={1000}
                 value={emiPrincipal}
-            onChange={(e) => {
-  setEmiPrincipal(Number(e.target.value));
+  onChange={(e) => {
+  const value = e.target.value
+    .replace(/\D/g, "")
+    .replace(/^0+(?=\d)/, "");
+
+  setEmiPrincipal(value);
   setEmiCalculated(false);
 }}
                 placeholder="Enter loan amount"
@@ -1061,8 +1076,17 @@ const formatLakhCrore = (value: number) => {
                 max={50}
                 step={0.1}
                 value={emiRate}
-             onChange={(e) => {
-  setEmiRate(Number(e.target.value));
+            onChange={(e) => {
+  let value = e.target.value.replace(/[^0-9.]/g, "");
+
+  if (value.includes(".")) {
+    const parts = value.split(".");
+    value = parts[0].replace(/^0+(?=\d)/, "") + "." + parts.slice(1).join("");
+  } else {
+    value = value.replace(/^0+(?=\d)/, "");
+  }
+
+  setEmiRate(value);
   setEmiCalculated(false);
 }}
                 placeholder="Enter interest rate"
@@ -1099,8 +1123,12 @@ const formatLakhCrore = (value: number) => {
                 max={360}
                 step={1}
                 value={emiTenure}
-              onChange={(e) => {
-  setEmiTenure(Number(e.target.value));
+             onChange={(e) => {
+  const value = e.target.value
+    .replace(/\D/g, "")
+    .replace(/^0+(?=\d)/, "");
+
+  setEmiTenure(value);
   setEmiCalculated(false);
 }}
                 placeholder="Enter tenure"

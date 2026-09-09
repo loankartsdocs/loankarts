@@ -14,6 +14,7 @@ type LoanFile = {
   commission_rate: number | null;
   created_at: string;
   disbursed_at: string | null;
+  commission_eligible_at: string | null;
 };
 
 type WithdrawalRequest = {
@@ -136,8 +137,9 @@ export default function BrokerWalletPage() {
       const { data: loanData, error: loanError } = await supabase
         .from("loan_files")
         .select(
-          "id, file_code, customer_name, loan_type, loan_amount, status, commission_amount, commission_rate, created_at, disbursed_at"
-        )
+  "id, file_code, customer_name, loan_type, loan_amount, status, commission_amount, commission_rate, created_at, disbursed_at, commission_eligible_at"
+)
+      
         .eq("broker_id", user.id)
         .eq("status", "Disbursed")
         .order("disbursed_at", { ascending: false });
@@ -231,13 +233,21 @@ export default function BrokerWalletPage() {
     const eligibleFiles = files.filter((file) => {
       if (withdrawnFileIds.has(file.id)) return false;
       if (!file.disbursed_at) return false;
-      return addOneMonth(file.disbursed_at) <= now;
+     const unlockDate = file.commission_eligible_at
+  ? new Date(file.commission_eligible_at)
+  : addOneMonth(file.disbursed_at);
+
+return unlockDate <= now;
     });
 
     const lockedFiles = files.filter((file) => {
       if (withdrawnFileIds.has(file.id)) return false;
       if (!file.disbursed_at) return true;
-      return addOneMonth(file.disbursed_at) > now;
+     const unlockDate = file.commission_eligible_at
+  ? new Date(file.commission_eligible_at)
+  : addOneMonth(file.disbursed_at);
+
+return unlockDate > now;
     });
 
     const available = eligibleFiles.reduce(
@@ -566,9 +576,11 @@ export default function BrokerWalletPage() {
                   const alreadyRequested = payoutItems.some(
                     (item) => item.loan_file_id === file.id
                   );
-                  const unlock = file.disbursed_at
-                    ? addOneMonth(file.disbursed_at)
-                    : null;
+                 const unlock = file.commission_eligible_at
+  ? new Date(file.commission_eligible_at)
+  : file.disbursed_at
+    ? addOneMonth(file.disbursed_at)
+    : null;
                   const available =
                     !alreadyRequested && unlock && unlock <= new Date();
 

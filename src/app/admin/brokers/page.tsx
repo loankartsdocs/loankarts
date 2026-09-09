@@ -17,6 +17,7 @@ type LoanFile = {
   document_paths: Record<string, string | null> | null;
   update_text: string | null;
   created_at?: string;
+  file_code: string | null;
 };
 
 type Broker = {
@@ -215,6 +216,7 @@ export default function BrokerManagementPage() {
           `
             id,
             broker_id,
+            file_code,
             broker_name,
             connector_code,
             customer_name,
@@ -598,7 +600,49 @@ export default function BrokerManagementPage() {
     if (status !== "Disbursed") return 0;
     return Number(file.loan_amount || 0) * (getCommissionRate(file) / 100);
   }
+async function updateWithdrawalStatus(
+  withdrawalId: string,
+  status: "Pending" | "Approved" | "Rejected" | "Paid"
+) {
+  if (!withdrawalId) return;
 
+  const updateData: {
+    status: string;
+    processed_at?: string;
+  } = {
+    status,
+  };
+
+  if (status === "Approved" || status === "Rejected" || status === "Paid") {
+    updateData.processed_at = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from("withdrawal_requests")
+    .update(updateData)
+    .eq("id", withdrawalId);
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  setWithdrawals((current) =>
+    current.map((item) =>
+      item.id === withdrawalId
+        ? {
+            ...item,
+            status,
+            processed_at:
+              updateData.processed_at || item.processed_at,
+          }
+        : item
+    )
+  );
+
+  await loadPendingWithdrawalCount();
+}
   async function updateFileStatus(fileId: string, status: string) {
     if (!fileId) {
       alert("Loan file ID missing");
@@ -1482,7 +1526,25 @@ export default function BrokerManagementPage() {
                                   </p>
                                 </div>
 
-                                <WithdrawalBadge status={request.status} />
+                               <div className="flex items-center gap-2">
+  <select
+    value={request.status}
+    onChange={(e) =>
+      updateWithdrawalStatus(
+        request.id,
+        e.target.value as "Pending" | "Approved" | "Rejected" | "Paid"
+      )
+    }
+    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-[#073b4c] outline-none focus:border-[#10b7d3]"
+  >
+    <option value="Pending">Pending</option>
+    <option value="Approved">Approved</option>
+    <option value="Rejected">Rejected</option>
+    <option value="Paid">Paid</option>
+  </select>
+
+  <WithdrawalBadge status={request.status} />
+</div>
                               </div>
 
                               {request.admin_note && (
@@ -1514,7 +1576,7 @@ export default function BrokerManagementPage() {
                           {detailsBroker.fileList.map((file) => (
                             <tr key={file.id} className="border-t border-slate-100">
                               <td className="px-4 py-3 text-xs font-black text-[#073b4c]">
-                                {file.id}
+                               {file.file_code || file.id}
                               </td>
                               <td className="px-4 py-3">
                                 <p className="text-xs font-black text-slate-700">{file.customer_name}</p>
