@@ -5,25 +5,6 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 
-const banks = [
-  ["SBI", "sbi.co.in"],
-  ["HDFC Bank", "hdfcbank.com"],
-  ["ICICI Bank", "icicibank.com"],
-  ["IDFC FIRST Bank", "idfcfirstbank.com"],
-  ["IndusInd Bank", "indusind.com"],
-  ["Bandhan Bank", "bandhanbank.com"],
-  ["Kotak Mahindra Bank", "kotak.com"],
-  ["Unity Small Finance Bank", "unitybank.com"],
-  ["Shriram Finance", "shriramfinance.in"],
-  ["Yes Bank", "yesbank.in"],
-  ["PNB", "pnbindia.in"],
-  ["Bank of Maharashtra", "bankofmaharashtra.in"],
-  ["Federal Bank", "federalbank.co.in"],
-  ["Union Bank of India", "unionbankofindia.bank.in"],
-  ["SVC Bank", "svcbank.com"],
-  ["Bank of Baroda", "bankofbaroda.in"],
-  ["Central Bank of India", "centralbankofindia.co.in"],
-];
 
 type Loan = [
   id: string,
@@ -81,25 +62,6 @@ const testimonials = [
 
 
 
-const bankLogoFiles: Record<string, string> = {
-  "SBI": "/sbi_co_in.ico",
-  "HDFC Bank": "/hdfcbank.png",
-  "ICICI Bank": "/icicibank_com.ico",
-  "IDFC FIRST Bank": "/idfcfirstbank_com.ico",
-  "IndusInd Bank": "/indusind.jpeg",
-  "Bandhan Bank": "/bandhanbank.png",
-  "Kotak Mahindra Bank": "/kotak_com.png",
-  "Unity Small Finance Bank": "/unitybank.png",
-  "Shriram Finance": "/shriramfinance.png",
-  "Yes Bank": "/yesbank.jpg",
-  "PNB": "/pnbindia_in.ico",
-  "Bank of Maharashtra": "/bankofmaharashtra.png",
-  "Federal Bank": "/federalbank_co_in.png",
-  "Union Bank of India": "/unionbank.jpeg",
-  "SVC Bank": "/svc.png",
-  "Bank of Baroda": "/bob.png",
-  "Central Bank of India": "/centralbankofindia.png",
-};
 
 export default function Home() {
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -357,11 +319,6 @@ const formatLakhCrore = (value: number) => {
           }
         }
 
-        @keyframes lkMarquee {
-          from {
-            transform: translateX(0);
-          }
-
           to {
             transform: translateX(-50%);
           }
@@ -373,23 +330,6 @@ const formatLakhCrore = (value: number) => {
 
         .lk-scale {
           animation: lkScale .9s .15s ease both;
-        }
-
-        .lk-marquee {
-          width: max-content;
-          animation: lkMarquee 38s linear infinite;
-          will-change: transform;
-        }
-
-        .lk-marquee:hover,
-        .lk-marquee:focus-within {
-          animation-play-state: paused;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .lk-marquee {
-            animation: none;
-          }
         }
 
         .lk-no-scrollbar::-webkit-scrollbar {
@@ -1968,55 +1908,7 @@ const formatLakhCrore = (value: number) => {
         </div>
       </section>
 
-      {/* ================= BANKING PARTNERS ================= */}
-
-      <section className="border-t border-slate-200 bg-white py-8 sm:py-10">
-        <div className="mx-auto max-w-[1280px] px-5 sm:px-8 lg:px-10">
-          <div className="mb-5 text-center">
-            <div className="text-[9px] font-extrabold uppercase tracking-[.22em] text-[#08aeca]">
-              OUR BANKING & FINANCIAL PARTNERS
-            </div>
-            <h2 className="mt-1.5 text-xl font-black text-[#082f42] sm:text-2xl">
-              Trusted Financial Network
-            </h2>
-          </div>
-
-          <div className="relative overflow-hidden">
-            <div
-              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent"
-              aria-hidden="true"
-            />
-            <div
-              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent"
-              aria-hidden="true"
-            />
-
-            <div className="lk-no-scrollbar overflow-hidden">
-              <div className="lk-marquee flex gap-3 py-2">
-                {[...banks, ...banks].map(([name, domain], index) => (
-                  <div
-                    key={`${name}-${index}`}
-                    className="flex h-[54px] shrink-0 items-center gap-2.5 px-4 transition hover:-translate-y-0.5"
-                  >
-                    <div className="flex h-8 w-8 items-center justify-center">
-                      <img
-                        src={bankLogoFiles[name] || "/sbi_co_in.ico"}
-                        alt={`${name} logo`}
-                        className="h-6 w-6 rounded object-contain"
-                        loading="lazy"
-                      />
-                    </div>
-                    <span className="whitespace-nowrap text-[11px] font-bold text-[#183f55]">
-                      {name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      
       {/* ================= FOOTER ================= */}
       <footer className="bg-[#050b20] text-white">
         <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-6">
